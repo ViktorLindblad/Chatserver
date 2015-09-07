@@ -41,4 +41,6 @@ public class Server extends ServerSocket implements Runnable {
 	}
 	
 	
+	//ETT TEST FÖR GIT
+	
 }
