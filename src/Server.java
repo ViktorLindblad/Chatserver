@@ -12,7 +12,7 @@ public class Server extends Thread {
 	private int port;
 	
 	//Lists
-	private Hashtable<Socket,String> connectedNames;
+	private Hashtable<String,Socket> connectedNames;
 	private ArrayList<String> connectedClients;
 	
 	//input & output
@@ -27,7 +27,7 @@ public class Server extends Thread {
 	public Server(int port){
 		super("Server");
 		this.port = port;
-		connectedNames = new Hashtable<Socket,String>();
+		connectedNames = new Hashtable<String,Socket>();
 		connectedClients = new ArrayList<String> ();
 
 		ServerSocket server = null;
@@ -53,7 +53,7 @@ public class Server extends Thread {
 	public Server(int port, SocketAddress IP) throws IOException {
 		super("Server");
 		this.port = port;
-		connectedNames = new Hashtable<Socket,String>();
+		connectedNames = new Hashtable<String,Socket>();
 		connectedClients = new ArrayList<String> ();
 		try{
 			datagramSocket = new DatagramSocket(port);
@@ -78,7 +78,7 @@ public class Server extends Thread {
 			e.printStackTrace();
 		}
 		
-		connectedNames.put(socket, "server");
+		connectedNames.put("server",socket);
 
 		start();//calls run
 		
@@ -129,7 +129,13 @@ public class Server extends Thread {
 	}
 	
 	public boolean addSocketToList(Socket socket, String str){
-		connectedNames.put(socket,str);
+		connectedNames.put(str, socket);
+		
+		for(String string : connectedNames.keySet()){
+			out.println(string);
+			out.flush();
+		}
+		
 		return connectedClients.add(str);
 	}
 	
