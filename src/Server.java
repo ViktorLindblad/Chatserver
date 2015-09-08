@@ -18,6 +18,8 @@ public class Server extends Thread {
 	//input & output
 	private PrintWriter out;
     private BufferedReader in;
+    private OutputStream outStream;
+    private InputStream inStream;
 	
     //variables 
     private boolean running = true;
@@ -34,8 +36,12 @@ public class Server extends Thread {
 			server = new ServerSocket(port);
 			socket = server.accept();
 
-			out = new PrintWriter(socket.getOutputStream(), true);
-	        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			outStream = socket.getOutputStream();
+			out = new PrintWriter(outStream, true);
+			
+			inStream = socket.getInputStream();
+	        in = new BufferedReader(new InputStreamReader(inStream));
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -166,16 +172,19 @@ public class Server extends Thread {
 			*/
 			int j = 0;
 			String inputLine;
+			
 			try {
-				while((inputLine = in.readLine()) != null){
+				if((inputLine = in.readLine()) != null){
 					j++;
 					System.out.println(j);
+					System.out.println(inputLine);
 					out.println(inputLine);
+					out.flush();
 				}
-				out.flush();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+
 		
 		}
 		

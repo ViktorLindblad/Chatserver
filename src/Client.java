@@ -11,6 +11,9 @@ public class Client extends Thread {
 	private boolean connected = true;
 	private PrintWriter out;
 	private BufferedReader in;
+	private BufferedReader keyReader;
+	private OutputStream outStream;
+	private InputStream inStream;
 	
 	//client is the name we use
 	
@@ -18,8 +21,14 @@ public class Client extends Thread {
 		super("a Client Thread");
 		try{
 			socket = new Socket("localhost",port);
-			out = new PrintWriter(socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			
+			keyReader = new BufferedReader(new InputStreamReader(System.in));
+			
+			outStream = socket.getOutputStream();
+			out = new PrintWriter(outStream, true);
+			
+			inStream = socket.getInputStream();
+	        in = new BufferedReader(new InputStreamReader(inStream));
 		} catch(IOException e){
 			e.printStackTrace();
 		}
@@ -37,32 +46,29 @@ public class Client extends Thread {
 	}
 	
 	public void run(){
+		int i = 0;
 		while(connected){
-			BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
-	        String fromServer = null;
-	        String fromUser = null;
+			System.out.println(i);
+			i++;
+	        String sendMessage, receiveMessage;
+	 
+	        try {
+				sendMessage = keyReader.readLine();
+		        out.println(sendMessage);
+		        out.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 	 
 	        try{
-	        	fromServer = in.readLine();
-	        } catch(IOException e ){
+	        	if((receiveMessage = in.readLine()) != null){
+	        		System.out.println(receiveMessage);
+	        	}
+	        } catch (IOException e){
 	        	e.printStackTrace();
 	        }
 	        
-	        while (fromServer != null) {
-	            System.out.print("---->");
-	            if (fromServer.equals("Bye.")){
-	            	break;
-	            }
-	             
-	            try {
-					fromUser = stdIn.readLine();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-	            if (fromUser != null){
-	                out.println(fromUser);
-	            }
-	        }
+	        
 		}
 	}
 	
