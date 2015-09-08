@@ -27,17 +27,19 @@ public class Server extends Thread {
 		this.port = port;
 		connectedNames = new Hashtable<Socket,String>();
 		connectedClients = new ArrayList<String> ();
-		
-		ServerSocket server;
+
+		ServerSocket server = null;
 		try {
+			
 			server = new ServerSocket(port);
 			socket = server.accept();
+
 			out = new PrintWriter(socket.getOutputStream(), true);
 	        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		start();//calls run
 		
 	}
@@ -58,9 +60,14 @@ public class Server extends Thread {
 		datagramSocket.send(DP);
 		try{
 			ServerSocket server = new ServerSocket(port);
+			System.out.println("before socket.accept()");
+			
 			socket = server.accept();
+			
+			System.out.println("input initiate");
 			out = new PrintWriter(socket.getOutputStream(), true);
 	        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+	        System.out.println("after input");
 		} catch (SocketException e){
 			e.printStackTrace();
 		}
@@ -133,8 +140,9 @@ public class Server extends Thread {
 	}
 
 	public void run() {
+		System.out.println("Server is running");
 		while(running){	
-			
+			/*
 			checkConnection();
 			DatagramPacket p = null;
 			
@@ -152,7 +160,8 @@ public class Server extends Thread {
 			} else {
 				running = false;
 			}
-		
+			*/
+			
 			String inputLine;
 			try {
 				while((inputLine = in.readLine()) != null){
