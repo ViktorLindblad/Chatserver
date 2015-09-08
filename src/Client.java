@@ -17,7 +17,7 @@ public class Client extends Thread {
 	public Client(int port){
 		super("a Client Thread");
 		try{
-			socket = new Socket("client",port);
+			socket = new Socket("localhost",port);
 			out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch(IOException e){

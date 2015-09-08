@@ -20,7 +20,7 @@ public class Server extends Thread {
     private BufferedReader in;
 	
     //variables 
-    private boolean running;
+    private boolean running = true;
 	
 	public Server(int port){
 		super("Server");
