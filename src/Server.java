@@ -3,6 +3,7 @@ import java.net.*;
 import java.util.*;
 
 public class Server extends Thread {
+	
 	//sockets
 	private DatagramSocket datagramSocket;
 	private Socket socket;
@@ -10,14 +11,36 @@ public class Server extends Thread {
 	//port
 	private int port;
 	
-	//Listor
+	//Lists
 	private Hashtable<Socket,String> connectedNames;
 	private ArrayList<String> connectedClients;
 	
-	//?
-	private InputStream IS;
-	private Scanner scanner;
-	private boolean running;
+	//input & output
+	private PrintWriter out;
+    private BufferedReader in;
+	
+    //variables 
+    private boolean running;
+	
+	public Server(int port){
+		super("Server");
+		this.port = port;
+		connectedNames = new Hashtable<Socket,String>();
+		connectedClients = new ArrayList<String> ();
+		
+		ServerSocket server;
+		try {
+			server = new ServerSocket(port);
+			socket = server.accept();
+			out = new PrintWriter(socket.getOutputStream(), true);
+	        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		start();//calls run
+		
+	}
 	
 	public Server(int port, SocketAddress IP) throws IOException {
 		super("Server");
@@ -32,18 +55,18 @@ public class Server extends Thread {
 		String s = "%0";
 		byte[] data = s.getBytes();
 		DatagramPacket DP = new DatagramPacket(data,data.length,port,IP);
-		sendUDP(DP);
+		datagramSocket.send(DP);
 		try{
 			ServerSocket server = new ServerSocket(port);
 			socket = server.accept();
+			out = new PrintWriter(socket.getOutputStream(), true);
+	        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		} catch (SocketException e){
 			e.printStackTrace();
 		}
 		
 		connectedNames.put(socket, "server");
 
-		IS = socket.getInputStream();
-		scanner = new Scanner(IS);
 		start();//calls run
 		
 	}
@@ -129,36 +152,22 @@ public class Server extends Thread {
 			} else {
 				running = false;
 			}
-			
-			//Send TCP 
-			 
-			//Receive TCP
-			
-			while(scanner.hasNextLine()){
-				System.out.println(scanner.nextLine());
+		
+			String inputLine;
+			try {
+				while((inputLine = in.readLine()) != null){
+					out.println(inputLine);
+				}
+				out.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
 		
 		}
 		
 	}
 	
-	
-	//Behövs ej...
-	public void sendUDP(DatagramPacket DP)  throws IOException {
-		datagramSocket.send(DP);
-	}
-	
-	public void recieveUDP(DatagramPacket DP) throws IOException{
-		datagramSocket.receive(DP);
-	}
-	
-	
-	//lite fel...
-	public void sendTCP() throws IOException{
-		socket.getInputStream();
-	}
-	
-	public void recieveTCP() throws IOException{
-		socket.getOutputStream();
+	public static void main(String[] args){
+		Server server = new Server(45);
 	}
 }
