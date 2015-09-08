@@ -9,7 +9,7 @@ public class Klient extends Thread {
 	private Socket socket;
 	
 	public Klient(int port, SocketAddress IP){
-		super();
+		super("a Client Thread");
 	try {
 		multicastSocket = new MulticastSocket(port);
 	} catch (IOException e) {

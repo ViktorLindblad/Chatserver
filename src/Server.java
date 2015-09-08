@@ -7,6 +7,9 @@ public class Server extends Thread {
 	private DatagramSocket datagramSocket;
 	private Socket socket;
 	
+	//port
+	private int port;
+	
 	//Listor
 	private Hashtable<Socket,String> connectedNames;
 	private ArrayList<String> connectedClients;
@@ -17,23 +20,22 @@ public class Server extends Thread {
 	private boolean running;
 	
 	public Server(int port, SocketAddress IP) throws IOException {
-		super();
+		super("Server");
+		this.port = port;
 		connectedNames = new Hashtable<Socket,String>();
 		connectedClients = new ArrayList<String> ();
 		try{
 			datagramSocket = new DatagramSocket(port);
-			String s = "%0";
-			byte[] data = s.getBytes();
-			DatagramPacket DP = new DatagramPacket(data,data.length,port,IP);
-			sendUDP(DP);
-			
 		} catch(SocketException e){
 			e.printStackTrace();
 		}
-		
+		String s = "%0";
+		byte[] data = s.getBytes();
+		DatagramPacket DP = new DatagramPacket(data,data.length,port,IP);
+		sendUDP(DP);
 		try{
 			ServerSocket server = new ServerSocket(port);
-			Socket socket = server.accept();
+			socket = server.accept();
 		} catch (SocketException e){
 			e.printStackTrace();
 		}
@@ -50,8 +52,21 @@ public class Server extends Thread {
 	 * 	A heart beat to show the name server it's "alive".
 	 */
 	
-	private boolean checkConnection(){
-		return running;
+	private void checkConnection(){
+		//Integer i = Integer.parseInt("0");
+		String s = "0";
+		byte[] data = s.getBytes();
+		DatagramPacket ping = new DatagramPacket(data,data.length,
+				datagramSocket.getLocalPort(),datagramSocket.getRemoteSocketAddress());
+		try{
+			datagramSocket.send(ping);
+		} catch(SocketException e){
+			System.out.println("Socket exception");
+			e.printStackTrace();
+		} catch(IOException e){
+			System.out.println("IO exception");
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -61,7 +76,20 @@ public class Server extends Thread {
 	 */
 	
 	public boolean changeServerPort(int port){
-		return false;
+		boolean condition = false;
+		this.port = port;
+		try{
+			ServerSocket server = new ServerSocket(port);
+			socket = server.accept();
+			condition = true;
+		} catch(SocketException e){
+			System.out.println("Socket");
+			e.printStackTrace();
+		} catch(IOException e ){
+			System.out.println("IO");
+			e.printStackTrace();
+		}
+		return condition;
 	}
 	
 	public boolean addSocketToList(Socket socket, String str){
@@ -82,7 +110,29 @@ public class Server extends Thread {
 	}
 
 	public void run() {
-		while(checkConnection()){	
+		while(running){	
+			
+			checkConnection();
+			DatagramPacket p = null;
+			
+			try {
+				datagramSocket.receive(p);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			String str = p.toString();
+			Integer message = Integer.parseInt(str);
+			
+			if(message.intValue()==1){
+				running = true;
+			} else {
+				running = false;
+			}
+			
+			//Send TCP 
+			 
+			//Receive TCP
 			
 			while(scanner.hasNextLine()){
 				System.out.println(scanner.nextLine());
@@ -92,6 +142,8 @@ public class Server extends Thread {
 		
 	}
 	
+	
+	//Behövs ej...
 	public void sendUDP(DatagramPacket DP)  throws IOException {
 		datagramSocket.send(DP);
 	}
