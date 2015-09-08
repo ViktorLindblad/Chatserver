@@ -141,7 +141,10 @@ public class Server extends Thread {
 
 	public void run() {
 		System.out.println("Server is running");
-		while(running){	
+		int i = 0;
+		while(running){
+			i++;
+			System.out.println(i);
 			/*
 			checkConnection();
 			DatagramPacket p = null;
@@ -161,10 +164,12 @@ public class Server extends Thread {
 				running = false;
 			}
 			*/
-			
+			int j = 0;
 			String inputLine;
 			try {
 				while((inputLine = in.readLine()) != null){
+					j++;
+					System.out.println(j);
 					out.println(inputLine);
 				}
 				out.flush();
