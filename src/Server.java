@@ -190,7 +190,7 @@ public class Server extends Thread {
 				e.printStackTrace();
 			}
 			
-			out.println(inputLine);
+			out.print(inputLine);
 			out.flush();
 
 		

@@ -67,10 +67,10 @@ public class Client extends Thread {
 	        String receiveMessage = "";
 
 	        if(!gui.getQueue().isEmpty()){
-				out.println(gui.getQueue().remove());
+				out.print(gui.getQueue().remove());
 		        out.flush();
 			} else {
-				out.println("");
+				out.print("");
 				out.flush();
 			}
 
@@ -81,9 +81,10 @@ public class Client extends Thread {
 	        	e.printStackTrace();
 	        }
 	        
-	        
+	        System.out.println(receiveMessage);
 	        
 	        if(receiveMessage != ""){
+	        	System.out.print("sant");
         		gui.getStringFromClient(receiveMessage);
 	        }
 	        
