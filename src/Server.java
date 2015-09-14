@@ -182,7 +182,7 @@ public class Server extends Thread {
 			
 			try {
 				if((inputLine = in.readLine()) != null){
-
+					System.out.println(inputLine);
 					out.println(inputLine);
 					out.flush();
 				}

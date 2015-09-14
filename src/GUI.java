@@ -15,28 +15,36 @@ public class GUI implements ActionListener{
 	private Client client;
 	private JFrame frame;
 	
-	private JTextArea chat;
-	private JTextField write;
-	private JTextArea connecteds;
-	private JScrollPane scroll;
+	private JTextArea chatbox;
+	private JTextField message;
+	private JTextArea clients;
+	private JScrollPane chatScroll;
+	private JScrollPane clientsScroll;
 	
 	public GUI(Client client){
 		
 		this.client = client;
 
 		frame = new JFrame("client");
-		chat = new JTextArea();
-		write = new JTextField();
-		connecteds = new JTextArea();
+		message = new JTextField();
+		
+		chatbox = new JTextArea();
+		clients = new JTextArea();
+		
 		panel = new JPanel();
 		button = new JButton("Send message");
-		scroll = new JScrollPane(chat);
+		
+		chatScroll = new JScrollPane(chatbox);
+		clientsScroll = new JScrollPane(clients);
 		
 		frame.add(panel);
+
+		panel.add(message);
 		
-		panel.add(scroll);
-		panel.add(write);
-		panel.add(connecteds);
+		panel.add(chatScroll);
+		panel.add(clientsScroll);
+		
+		panel.add(clients);
 		panel.add(button);
 
 		frame.setSize(620,360);
@@ -49,18 +57,24 @@ public class GUI implements ActionListener{
 		
 		//g = getGraphics();
 		panel.setLayout(null);
+		panel.setBackground(Color.PINK);
 		
-		chat.setBounds(0,0,400,200);
+		chatbox.setBounds(0,0,400,200);
+		message.setBounds(0,250,400,30);
 		
-		write.setBounds(0,200,400,60);
+		chatbox.setEditable(false);
 		
-		connecteds.setBounds(400,0,220,300);
+		clients.setBounds(450,0,150,200);
+		chatScroll.setBounds(0,0,400,200);
 		
-		scroll.setBounds(0,0,400,200);
+		chatbox.setBackground(Color.MAGENTA);
+		clients.setBackground(Color.magenta);
 		
-		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		chatScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		clientsScroll.setBounds(450,0,150,200);
 		
-		button.setBounds(450,300,64,32);
+		clientsScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		button.setBounds(450,250,150,32);
 		
 		button.addActionListener(this);
 	}
@@ -77,8 +91,14 @@ public class GUI implements ActionListener{
 
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == button){
-			System.out.println(write.getText());
-			client.getStringFromGUI(write.getText());
+			client.getStringFromGUI(message.getText());
+			message.setText("");
+		}
+	}
+	
+	public void getStringFromClient(String string){
+		if(string!=""){
+			chatbox.setText(string);
 		}
 	}
 }

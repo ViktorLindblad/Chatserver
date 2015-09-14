@@ -22,7 +22,7 @@ public class Client extends Thread {
 	private Socket socket;
 	
 	private GUI gui;
-	private String string;
+	private String string = "";
 
 	private boolean connected = true;
 	private PrintWriter out;
@@ -37,6 +37,8 @@ public class Client extends Thread {
 	public Client(int port){
 		super("a Client Thread");
 						
+		gui = new GUI(this);
+		
 		try{
 			socket = new Socket("localhost",port);
 			keyReader = new BufferedReader(new InputStreamReader(System.in));
@@ -64,18 +66,17 @@ public class Client extends Thread {
 	
 	public void run(){
 		
-		gui = new GUI(this);
 		//Skicka namn till servern
 		
 		while(connected){
 			
 			
-	        String sendMessage, receiveMessage;
+	        String receiveMessage;
 	        //sendMessage = Write.getText();
-	        
 			if(string != null){
 				out.println(string);
 		        out.flush();
+		        string = "";
 			}
 	        /*try {
 				//sendMessage = keyReader.readLine();
@@ -88,7 +89,8 @@ public class Client extends Thread {
 	        try{
 	        	if((receiveMessage = in.readLine()) != null){
 	        		System.out.println(receiveMessage);
-
+	        		gui.getStringFromClient(receiveMessage);
+	        		
 	        	}
 	        } catch (IOException e){
 	        	e.printStackTrace();
