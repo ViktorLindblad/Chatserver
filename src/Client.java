@@ -76,7 +76,7 @@ public class Client extends Thread {
 			if(string != null){
 				out.println(string);
 		        out.flush();
-		        string = "";
+		        //string = "";
 			}
 	        /*try {
 				//sendMessage = keyReader.readLine();
