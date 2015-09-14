@@ -181,7 +181,6 @@ public class Server extends Thread {
 				running = false;
 			}
 			*/
-
 			String inputLine = "";
 			try {
 				if((inputLine = in.readLine()) != null){
@@ -190,7 +189,7 @@ public class Server extends Thread {
 				e.printStackTrace();
 			}
 			
-			out.print(inputLine);
+			out.println(inputLine);
 			out.flush();
 
 		
