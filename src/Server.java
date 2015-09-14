@@ -27,6 +27,7 @@ public class Server extends Thread {
 	
     //variables 
     private boolean running = true;
+	private boolean noName = false;
 	
 	public Server(int port){
 		super("Server");
@@ -160,6 +161,20 @@ public class Server extends Thread {
 	}
 
 	public void run() {
+		String inputLine = "";
+		/*
+		while(noName){
+			
+			try {
+				if((inputLine = in.readLine()) != null){
+				} 
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			out.println(inputLine);
+			out.flush();
+		}*/
 
 		while(running){
 			/*
@@ -181,7 +196,6 @@ public class Server extends Thread {
 				running = false;
 			}
 			*/
-			String inputLine = "";
 			try {
 				if((inputLine = in.readLine()) != null){
 				} 

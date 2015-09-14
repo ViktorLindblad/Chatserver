@@ -21,6 +21,7 @@ public class Client extends Thread {
 	
 	private GUI gui;
 	private GUI login;
+	private String name;
 
 	private boolean connected = true;
 	private PrintWriter out;
@@ -32,9 +33,6 @@ public class Client extends Thread {
 	
 	public Client(int port){
 		super("a Client Thread");
-						
-		login = new GUI(this,120,120);
-		gui = new GUI(this);
 		
 		try{
 			socket = new Socket("localhost",port);
@@ -61,11 +59,28 @@ public class Client extends Thread {
 	}
 	
 	public void run(){
-	
-		//Skicka namn till servern
-		while(connected){
-	        String receiveMessage = "";
+	    String receiveMessage = "";
+		login = new GUI(360,360);
+		/*
+		while(name == null){
+			if(!login.getQueue().isEmpty()){
+				name = login.getQueue().remove();
+				out.println(name);
+				out.flush();
+				try{
+		        	if((receiveMessage = in.readLine()) != null){
+		        	}
+		        } catch (IOException e){
+		        	e.printStackTrace();
+		        }
+				
+				login.getNameFromClient(name);
+			}
+		}*/
+		gui = new GUI();
 
+		while(connected){
+			
 	        if(!gui.getQueue().isEmpty()){
 				out.println(gui.getQueue().remove());
 		        out.flush();

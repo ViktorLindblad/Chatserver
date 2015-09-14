@@ -1,7 +1,7 @@
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.net.Socket;
 import java.util.LinkedList;
 
 import javax.swing.*;
@@ -15,9 +15,10 @@ public class GUI implements ActionListener{
 	
 	private LinkedList<String> queue;
 	private String chatString = "";
+	private String name = "";
+	private String clientNames = "";
+
 	
-	//private Graphics g;
-	private Client client;
 	private JFrame frame;
 	
 	private JTextArea chatbox;
@@ -25,10 +26,10 @@ public class GUI implements ActionListener{
 	private JTextArea clients;
 	private JScrollPane chatScroll;
 	private JScrollPane clientsScroll;
+
 	
-	public GUI(Client client, int width, int height){
+	public GUI(int width, int height){
 		
-		this.client = client;
 		
 		frame = new JFrame("Login");	
 		message = new JTextField();
@@ -44,6 +45,7 @@ public class GUI implements ActionListener{
 		panel.add(chatbox);
 		
 		panel.setLayout(null);
+		button.addActionListener(this);
 		
 		frame.setSize(width, height);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,11 +54,14 @@ public class GUI implements ActionListener{
 		frame.setLocationRelativeTo(null);
 		
 		frame.setVisible(true);
+		button.setBounds((width/3),(height/3)*2 , width/3, height/3);
+		
+		chatbox.setBounds(width/3, 0, width/3, height/3);
+		message.setBounds(width/3, height/3, width/3, height/3);
 	}
 	
-	public GUI(Client client){
+	public GUI(){
 		
-		this.client = client;
 		queue = new LinkedList<String> ();
 
 		frame = new JFrame("client");
@@ -97,6 +102,7 @@ public class GUI implements ActionListener{
 		message.setBounds(0,250,400,30);
 		
 		chatbox.setEditable(false);
+		chatbox.setFont(new Font("Century Gothic", Font.PLAIN, 12));
 		
 		clients.setBounds(450,0,150,200);
 		chatScroll.setBounds(0,0,400,200);
@@ -111,17 +117,9 @@ public class GUI implements ActionListener{
 		button.setBounds(450,250,150,32);
 		
 		button.addActionListener(this);
+
 	}
-	/*
-	public void render(Graphics g, String str){
-		
-		g.setColor(Color.PINK);
-		g.fillRect(0, 0, 620, 360);
-		g.setColor(Color.RED);
-		g.fillRect(0, 0, 400, 200);
-		g.setColor(Color.BLACK);
-		g.drawString(str, 330, 180);
-	}*/
+
 	
 	public LinkedList<String> getQueue(){
 		return queue;
@@ -146,4 +144,16 @@ public class GUI implements ActionListener{
 			chatbox.setText(chatString);
 		}
 	}
+	
+	public void getNameFromClient(String string){
+		if(string != ""){
+			clientNames += string + "\n";
+			clients.setText(clientNames);
+		}
+	}
+	
+	public String getName(){
+		return name;
+	}
+	
 }
