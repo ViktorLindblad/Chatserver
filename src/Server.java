@@ -14,6 +14,8 @@ public class Server extends Thread {
 	//Lists
 	private Hashtable<String,Socket> connectedNames;
 	private ArrayList<String> connectedClients;
+	private LinkedList<Socket> queue;
+
 	
 	//input & output
 	private PrintWriter out;
@@ -29,6 +31,7 @@ public class Server extends Thread {
 		this.port = port;
 		connectedNames = new Hashtable<String,Socket>();
 		connectedClients = new ArrayList<String> ();
+		queue = new LinkedList<Socket>();
 
 		ServerSocket server = null;
 		try {
