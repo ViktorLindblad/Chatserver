@@ -61,27 +61,21 @@ public class Client extends Thread {
 	}
 	
 	public void run(){
-		
+	
 		//Skicka namn till servern
 		while(connected){
-			
 	        String receiveMessage = "";
 
 	        if(!gui.getQueue().isEmpty()){
-				System.out.println("if");
 				out.println(gui.getQueue().remove());
 		        out.flush();
 			} else {
-				System.out.println("else");
 				out.println("");
 				out.flush();
 			}
 
 	        try{
-	        	System.out.println("hej");
-	        	if((in.readLine()) != null){
-	        			System.out.println("inne i if");
-		        		receiveMessage = in.readLine();
+	        	if((receiveMessage = in.readLine()) != null){
 	        	}
 	        } catch (IOException e){
 	        	e.printStackTrace();

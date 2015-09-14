@@ -162,7 +162,6 @@ public class Server extends Thread {
 	public void run() {
 
 		while(running){
-
 			/*
 			checkConnection();
 			DatagramPacket p = null;
@@ -185,8 +184,7 @@ public class Server extends Thread {
 
 			String inputLine = "";
 			try {
-				if(in.readLine() != null){
-					inputLine = in.readLine();
+				if((inputLine = in.readLine()) != null){
 				} 
 			} catch (IOException e) {
 				e.printStackTrace();

@@ -124,7 +124,6 @@ public class GUI implements ActionListener{
 	}*/
 	
 	public LinkedList<String> getQueue(){
-		System.out.println(queue.isEmpty());
 		return queue;
 	}
 	
