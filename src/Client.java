@@ -36,9 +36,7 @@ public class Client extends Thread {
 	
 	public Client(int port){
 		super("a Client Thread");
-				
-		gui = new GUI(this);
-		
+						
 		try{
 			socket = new Socket("localhost",port);
 			keyReader = new BufferedReader(new InputStreamReader(System.in));
@@ -65,6 +63,10 @@ public class Client extends Thread {
 	}
 	
 	public void run(){
+		
+		gui = new GUI(this);
+		//Skicka namn till servern
+		
 		while(connected){
 			
 			
@@ -94,16 +96,13 @@ public class Client extends Thread {
 		}
 	}
 	
-
-	
-	public static void main(String[] args){
-		Client client = new Client(45);
-	}
-
 	public void getStringFromGUI(String text) {
 		if(text != ""){
 			string = text;
 		}
 	}
 	
+	public static void main(String[] args){
+		Client client = new Client(45);
+	}
 }

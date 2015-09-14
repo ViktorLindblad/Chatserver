@@ -2,16 +2,10 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.ScrollPaneConstants;
+import javax.swing.*;
 
 
-public class GUI extends JFrame implements ActionListener{
+public class GUI implements ActionListener{
 
 	private JPanel panel;
 
@@ -19,6 +13,7 @@ public class GUI extends JFrame implements ActionListener{
 	
 	//private Graphics g;
 	private Client client;
+	private JFrame frame;
 	
 	private JTextArea chat;
 	private JTextField write;
@@ -26,28 +21,34 @@ public class GUI extends JFrame implements ActionListener{
 	private JScrollPane scroll;
 	
 	public GUI(Client client){
-		super("Client");
 		
 		this.client = client;
-		
-		setSize(620,360);
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
-		setResizable(false);
-		setLocationRelativeTo(null);
-		
-		setVisible(true);
-		setBackground(Color.PINK);
-		
-		//g = getGraphics();
-		
-		panel = new JPanel();
-		panel.setLayout(null);
 
-		
+		frame = new JFrame("client");
 		chat = new JTextArea();
 		write = new JTextField();
 		connecteds = new JTextArea();
+		panel = new JPanel();
+		button = new JButton("Send message");
+		scroll = new JScrollPane(chat);
+		
+		frame.add(panel);
+		
+		panel.add(scroll);
+		panel.add(write);
+		panel.add(connecteds);
+		panel.add(button);
+
+		frame.setSize(620,360);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		frame.setResizable(false);
+		frame.setLocationRelativeTo(null);
+		
+		frame.setVisible(true);
+		
+		//g = getGraphics();
+		panel.setLayout(null);
 		
 		chat.setBounds(0,0,400,200);
 		
@@ -55,25 +56,13 @@ public class GUI extends JFrame implements ActionListener{
 		
 		connecteds.setBounds(400,0,220,300);
 		
-		scroll = new JScrollPane(chat);
 		scroll.setBounds(0,0,400,200);
 		
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		
-		button = new JButton("Send message");
-		
 		button.setBounds(450,300,64,32);
 		
 		button.addActionListener(this);
-		
-		panel.add(scroll);
-		panel.add(write);
-		panel.add(connecteds);
-		panel.add(button);
-		
-		add(panel);
-		
-		
 	}
 	/*
 	public void render(Graphics g, String str){
@@ -88,11 +77,8 @@ public class GUI extends JFrame implements ActionListener{
 
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == button){
-			System.out.println("click");
+			System.out.println(write.getText());
 			client.getStringFromGUI(write.getText());
 		}
 	}
-	
-	
-	
 }
