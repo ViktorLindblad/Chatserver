@@ -1,6 +1,4 @@
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,37 +9,35 @@ import java.net.MulticastSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 
-import javax.swing.JFrame;
-import javax.swing.JTextField;
+
 
 
 
 public class Client extends Thread {
 	
+	@SuppressWarnings("unused")
 	private MulticastSocket multicastSocket;
 	private Socket socket;
 	
 	private GUI gui;
-	private String string = "";
+	private GUI login;
 
 	private boolean connected = true;
 	private PrintWriter out;
 	private BufferedReader in;
-	private BufferedReader keyReader;
 	private OutputStream outStream;
-	private InputStream inStream;
-	
+	private InputStream inStream;	
 	
 	//client is the name we use
 	
 	public Client(int port){
 		super("a Client Thread");
 						
+		login = new GUI(this,120,120);
 		gui = new GUI(this);
 		
 		try{
 			socket = new Socket("localhost",port);
-			keyReader = new BufferedReader(new InputStreamReader(System.in));
 			
 			outStream = socket.getOutputStream();
 			out = new PrintWriter(outStream, true);
@@ -67,44 +63,42 @@ public class Client extends Thread {
 	public void run(){
 		
 		//Skicka namn till servern
-		
 		while(connected){
 			
-			
-	        String receiveMessage;
-	        //sendMessage = Write.getText();
-			if(string != null){
-				out.println(string);
+	        String receiveMessage = "";
+
+	        if(!gui.getQueue().isEmpty()){
+				System.out.println("if");
+				out.println(gui.getQueue().remove());
 		        out.flush();
-		        //string = "";
+			} else {
+				System.out.println("else");
+				out.println("");
+				out.flush();
 			}
-	        /*try {
-				//sendMessage = keyReader.readLine();
-	        	out.println(sendMessage);
-		        out.flush();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}*/
-	 
+
 	        try{
-	        	if((receiveMessage = in.readLine()) != null){
-	        		System.out.println(receiveMessage);
-	        		gui.getStringFromClient(receiveMessage);
-	        		
+	        	System.out.println("hej");
+	        	if((in.readLine()) != null){
+	        			System.out.println("inne i if");
+		        		receiveMessage = in.readLine();
 	        	}
 	        } catch (IOException e){
 	        	e.printStackTrace();
 	        }
+	        
+	        
+	        
+	        if(receiveMessage != ""){
+        		gui.getStringFromClient(receiveMessage);
+	        }
+	        
 		}
 	}
 	
-	public void getStringFromGUI(String text) {
-		if(text != ""){
-			string = text;
-		}
-	}
-	
+	@SuppressWarnings("unused")
 	public static void main(String[] args){
+		
 		Client client = new Client(45);
 	}
 }

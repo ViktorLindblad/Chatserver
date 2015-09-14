@@ -1,6 +1,8 @@
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.Socket;
+import java.util.LinkedList;
 
 import javax.swing.*;
 
@@ -10,6 +12,9 @@ public class GUI implements ActionListener{
 	private JPanel panel;
 
 	private JButton button;
+	
+	private LinkedList<String> queue;
+	private String chatString = "";
 	
 	//private Graphics g;
 	private Client client;
@@ -21,9 +26,38 @@ public class GUI implements ActionListener{
 	private JScrollPane chatScroll;
 	private JScrollPane clientsScroll;
 	
+	public GUI(Client client, int width, int height){
+		
+		this.client = client;
+		
+		frame = new JFrame("Login");	
+		message = new JTextField();
+		
+		panel = new JPanel();
+		button = new JButton("Login");
+		chatbox = new JTextArea();
+		
+		frame.add(panel);
+		panel.add(button);
+		
+		panel.add(message);
+		panel.add(chatbox);
+		
+		panel.setLayout(null);
+		
+		frame.setSize(width, height);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		
+		frame.setResizable(false);
+		frame.setLocationRelativeTo(null);
+		
+		frame.setVisible(true);
+	}
+	
 	public GUI(Client client){
 		
 		this.client = client;
+		queue = new LinkedList<String> ();
 
 		frame = new JFrame("client");
 		message = new JTextField();
@@ -88,17 +122,29 @@ public class GUI implements ActionListener{
 		g.setColor(Color.BLACK);
 		g.drawString(str, 330, 180);
 	}*/
+	
+	public LinkedList<String> getQueue(){
+		System.out.println(queue.isEmpty());
+		return queue;
+	}
+	
+	public void addStringToQueue(String string){
+		queue.add(string);
+	}
 
 	public void actionPerformed(ActionEvent e) {
 		if(e.getSource() == button){
-			client.getStringFromGUI(message.getText());
-			message.setText("");
+			if(message.getText() != ""){
+				addStringToQueue(message.getText());
+				message.setText("");
+			}
 		}
 	}
 	
 	public void getStringFromClient(String string){
-		if(string!=""){
-			chatbox.setText(string);
+		if(string != ""){
+			chatString += string + "\n";
+			chatbox.setText(chatString);
 		}
 	}
 }

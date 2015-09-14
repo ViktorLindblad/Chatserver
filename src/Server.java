@@ -9,11 +9,13 @@ public class Server extends Thread {
 	private Socket socket;
 	
 	//port
+	@SuppressWarnings("unused")
 	private int port;
 	
 	//Lists
 	private Hashtable<String,Socket> connectedNames;
 	private ArrayList<String> connectedClients;
+	@SuppressWarnings("unused")
 	private LinkedList<Socket> queue;
 
 	
@@ -72,6 +74,7 @@ public class Server extends Thread {
 			System.out.println("before socket.accept()");
 			
 			socket = server.accept();
+			server.close();
 			
 			System.out.println("input initiate");
 			out = new PrintWriter(socket.getOutputStream(), true);
@@ -91,6 +94,7 @@ public class Server extends Thread {
 	 * 	A heart beat to show the name server it's "alive".
 	 */
 	
+	@SuppressWarnings("unused")
 	private void checkConnection(){
 		//Integer i = Integer.parseInt("0");
 		String s = "0";
@@ -120,6 +124,7 @@ public class Server extends Thread {
 		try{
 			ServerSocket server = new ServerSocket(port);
 			socket = server.accept();
+			server.close();
 			condition = true;
 		} catch(SocketException e){
 			System.out.println("Socket");
@@ -155,7 +160,7 @@ public class Server extends Thread {
 	}
 
 	public void run() {
-		System.out.println("Server is running...");
+
 		while(running){
 
 			/*
@@ -178,23 +183,23 @@ public class Server extends Thread {
 			}
 			*/
 
-			String inputLine;
-			
+			String inputLine = "";
 			try {
-				if((inputLine = in.readLine()) != null){
-					System.out.println(inputLine);
-					out.println(inputLine);
-					out.flush();
-				}
+				if(in.readLine() != null){
+					inputLine = in.readLine();
+				} 
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			
+			out.println(inputLine);
+			out.flush();
 
 		
 		}
-		
 	}
 	
+	@SuppressWarnings("unused")
 	public static void main(String[] args){
 		Server server = new Server(45);
 	}
