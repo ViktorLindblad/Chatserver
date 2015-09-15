@@ -25,7 +25,7 @@ public abstract class PDU {
      * @return A byte array representation of the PDU with a length divisible
      * by 4.
      */
-    public abstract byte[] toByteArray(OpCode opcode);
+    public abstract byte[] toByteArray();
 
     /**
      * Computes the sum of the specified lengths, padding each

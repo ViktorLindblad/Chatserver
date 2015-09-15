@@ -224,7 +224,7 @@ public class Server extends PDU implements Runnable{
 		}
 	}
 	
-	public byte[] toByteArray(OpCode opcode) {
+	public byte[] toByteArray() {
 		
 		return null;
 	}

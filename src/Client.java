@@ -31,14 +31,21 @@ public class Client extends PDU implements Runnable{
 		
 		if(!connect(ip,port)){
 			System.out.println("Connection failed");
+		} else {
+			System.out.println(address);
+			try {
+				multicastSocket.joinGroup(address);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		
-		multicastSocket.joinGroup(address);
-		padLengths(OpCode.GETLIST.value);
+		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
+		BSB.append(OpCode.GETLIST.value);
 		
-		DatagramPacket DP = new DatagramPacket(OpCode.GETLIST,,port,address);		
-		
-		
+		send(BSB.toByteArray());
+		System.out.println(receive());
+		/*
 		try{
 			socket = new Socket("localhost",port);
 			
@@ -53,11 +60,12 @@ public class Client extends PDU implements Runnable{
 		}
 		
 		thread.start(); // calls run
+		*/
 	}
 
 	private boolean connect(String ip, int port){
 		try {
-			multicastSocket = new MulticastSocket();
+			multicastSocket = new MulticastSocket(0);
 			address = InetAddress.getByName(ip);
 		}	catch (SocketException e){
 			e.printStackTrace();
@@ -81,7 +89,12 @@ public class Client extends PDU implements Runnable{
 	}
 	
 	private void send(byte[] data){
-		
+		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
+		try {
+			multicastSocket.send(packet);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void run(){
@@ -128,9 +141,8 @@ public class Client extends PDU implements Runnable{
 		}
 	}
 	
-	public byte[] toByteArray(OpCode opcode) {
-		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
-		BSB.appendInt(i)
+	public byte[] toByteArray() {
+		return buffer;
 	}
 
 	
