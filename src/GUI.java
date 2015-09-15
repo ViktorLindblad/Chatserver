@@ -37,6 +37,7 @@ public class GUI implements ActionListener{
 		panel = new JPanel();
 		button = new JButton("Login");
 		chatbox = new JTextArea();
+		JLabel label = new JLabel("Username");
 		
 		frame.add(panel);
 		panel.add(button);
@@ -44,8 +45,12 @@ public class GUI implements ActionListener{
 		panel.add(message);
 		panel.add(chatbox);
 		
+		panel.add(label);
+		
 		panel.setLayout(null);
 		button.addActionListener(this);
+		
+		label.setBounds(width/3,height/3 , 64, 32);
 		
 		frame.setSize(width, height);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -57,7 +62,9 @@ public class GUI implements ActionListener{
 		button.setBounds((width/3),(height/3)*2 , width/3, height/3);
 		
 		chatbox.setBounds(width/3, 0, width/3, height/3);
-		message.setBounds(width/3, height/3, width/3, height/3);
+		message.setBounds(width/3, height/3+32 , 64, 32);
+		
+		chatbox.setEditable(false);
 	}
 	
 	public GUI(){

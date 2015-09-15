@@ -4,7 +4,6 @@ import java.net.*;
 
 public class Client extends PDU implements Runnable{
 	
-	@SuppressWarnings("unused")
 	private MulticastSocket multicastSocket;
 	private Socket socket;
 	
@@ -40,11 +39,12 @@ public class Client extends PDU implements Runnable{
 		
 		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
 		BSB.append(OpCode.GETLIST.value);
-		while(true){
-		System.out.println("sending");
+		BSB.pad();
+		System.out.println(BSB.size());
+		System.out.println("sending "+BSB.toByteArray());
 		send(BSB.toByteArray());
 		System.out.println(receive());
-		}
+		
 		/*
 		try{
 			socket = new Socket("localhost",port);
@@ -152,6 +152,8 @@ public class Client extends PDU implements Runnable{
 	public static void main(String[] args){
 		GUI login = new GUI(360,360);
 		String name = "";
+		
+		
 		Client client = new Client(1337,"itchy.cs.umu.se",name);
 	}
 

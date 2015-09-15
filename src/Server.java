@@ -6,18 +6,17 @@ public class Server extends PDU implements Runnable{
 	
 	private Thread thread;
 	private Byte[] buffer;
+	
 	//sockets
 	private DatagramSocket datagramSocket;
 	private Socket socket;
 	
 	//port
-	@SuppressWarnings("unused")
 	private int port;
 	
 	//Lists
 	private Hashtable<String,Socket> connectedNames;
 	private ArrayList<String> connectedClients;
-	@SuppressWarnings("unused")
 	private LinkedList<Socket> queue;
 	private LinkedList<String> messageQueue;
 
@@ -108,7 +107,6 @@ public class Server extends PDU implements Runnable{
 	 * 	A heart beat to show the name server it's "alive".
 	 */
 	
-	@SuppressWarnings("unused")
 	private void checkConnection(){
 		//Integer i = Integer.parseInt("0");
 		String s = "0";
