@@ -5,7 +5,7 @@ import java.util.*;
 public class Server extends PDU implements Runnable{
 	
 	private Thread thread;
-	
+	private Byte[] buffer;
 	//sockets
 	private DatagramSocket datagramSocket;
 	private Socket socket;
@@ -19,6 +19,7 @@ public class Server extends PDU implements Runnable{
 	private ArrayList<String> connectedClients;
 	@SuppressWarnings("unused")
 	private LinkedList<Socket> queue;
+	private LinkedList<String> messageQueue;
 
 	
 	//input & output
@@ -37,7 +38,7 @@ public class Server extends PDU implements Runnable{
 		connectedNames = new Hashtable<String,Socket>();
 		connectedClients = new ArrayList<String> ();
 		queue = new LinkedList<Socket>();
-
+		messageQueue = new LinkedList<String> ();
 		ServerSocket server = null;
 		try {
 			
@@ -208,6 +209,9 @@ public class Server extends PDU implements Runnable{
 				running = false;
 			}
 			*/
+			
+			//Queue messagequeue if needed.
+			
 			try {
 				if((inputLine = in.readLine()) != null){
 				} 
@@ -220,14 +224,13 @@ public class Server extends PDU implements Runnable{
 		}
 	}
 	
+	public byte[] toByteArray(OpCode opcode) {
+		
+		return null;
+	}
+	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
 		Server server = new Server(45);
-	}
-
-	@Override
-	public byte[] toByteArray() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }
