@@ -23,7 +23,7 @@ public class Client extends PDU implements Runnable{
 	
 	//client is the name we use
 	
-	public Client(int port,  String ip, String name){
+	public Client(int port,  String ip, String name) {
 		thread = new Thread("A Client Thread");
 		
 		this.port = port;
@@ -33,18 +33,18 @@ public class Client extends PDU implements Runnable{
 			System.out.println("Connection failed");
 		} else {
 			System.out.println(address);
-			try {
-				multicastSocket.joinGroup(address);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			multicastSocket.connect(address, port);
 		}
+		
+		System.out.println(multicastSocket.isConnected());
 		
 		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
 		BSB.append(OpCode.GETLIST.value);
-		
+		while(true){
+		System.out.println("sending");
 		send(BSB.toByteArray());
 		System.out.println(receive());
+		}
 		/*
 		try{
 			socket = new Socket("localhost",port);
@@ -79,11 +79,13 @@ public class Client extends PDU implements Runnable{
 	
 	private String receive(){
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
+		System.out.println("receiving");
 		try{
 			multicastSocket.receive(packet);
 		} catch (IOException e){
 			e.printStackTrace();
 		}
+		System.out.println("message is received");
 		String message = new String(packet.getData());
 		return message;
 	}
