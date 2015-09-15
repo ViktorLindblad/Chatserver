@@ -179,35 +179,40 @@ public class Server extends PDU implements Runnable{
 			receive();
 			*/
 			if(!connector.getQueue().isEmpty()){
-				System.out.println("connector queue isnt empty");
 				Socket socket = connector.getQueue().remove();
 				connectedClients.add(socket);
+			}
+			for(Socket  temp : connectedClients){
+				
 				try {
-					outStream = socket.getOutputStream();
+					outStream = temp.getOutputStream();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 				out = new PrintWriter(outStream, true);
 				
 				try {
-					inStream = socket.getInputStream();
+					inStream = temp.getInputStream();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 		        in = new BufferedReader(new InputStreamReader(inStream));
 			}
 			
+			//move upp in other for loop.
 			if(!connectedClients.isEmpty()){
-				System.out.println("we are chating");
-				try {
-					if((inputLine = in.readLine()) != null){
-					} 
-				} catch (IOException e) {
-					e.printStackTrace();
+				for(Socket temp : connectedClients){
+					
+					try {
+						if((inputLine = in.readLine()) != null){
+						} 
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				
+					out.println(inputLine);
+					out.flush();
 				}
-			
-				out.println(inputLine);
-				out.flush();
 			}
 		}
 	}
