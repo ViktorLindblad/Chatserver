@@ -4,19 +4,21 @@ import java.util.*;
 
 public class Server extends PDU implements Runnable{
 	
-	private Thread thread;
-	private Byte[] buffer;
+	private byte[] buffer,alive;
+	private InetAddress address;
+	private ServerConnector connector;
 	
 	//sockets
 	private DatagramSocket datagramSocket;
 	private Socket socket;
+	private ServerSocket server;
 	
 	//port
 	private int port;
 	
 	//Lists
-	private Hashtable<String,Socket> connectedNames;
-	private ArrayList<String> connectedClients;
+	private ArrayList<String> connectedNames;
+	private ArrayList<Socket> connectedClients;
 	private LinkedList<Socket> queue;
 	private LinkedList<String> messageQueue;
 
@@ -31,97 +33,87 @@ public class Server extends PDU implements Runnable{
     private boolean running = true;
 	private boolean noName = false;
 	
-	public Server(int port){
-		thread = new Thread("A Server Thread");
+	public Server(int port,String ip){
+
 		this.port = port;
-		connectedNames = new Hashtable<String,Socket>();
-		connectedClients = new ArrayList<String> ();
+		
+		connectedNames = new ArrayList<String>();
+		connectedClients = new ArrayList<Socket> ();
 		queue = new LinkedList<Socket>();
 		messageQueue = new LinkedList<String> ();
-		ServerSocket server = null;
-		try {
-			
-			server = new ServerSocket(port);
-			socket = server.accept();
-
-			outStream = socket.getOutputStream();
-			out = new PrintWriter(outStream, true);
-			
-			inStream = socket.getInputStream();
-	        in = new BufferedReader(new InputStreamReader(inStream));
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		thread.start();//calls run
 		
-	}
-	
-	public Server(int port, SocketAddress IP) {
-		thread = new Thread("A Server Thread");
 		this.port = port;
+		buffer = new byte[256];
+		alive = new byte[256];
 		
-		connectedNames = new Hashtable<String,Socket>();
-		connectedClients = new ArrayList<String> ();
-		
-		try{
-			datagramSocket = new DatagramSocket(port);
-		} catch(SocketException e) {
-			e.printStackTrace();
-		} catch(IOException e) {
-			e.printStackTrace();
+		if(!connect(ip,port)){
+			System.out.println("Connection failed");
+		} else {
+			datagramSocket.connect(address, port);
 		}
-		String s = "%0";
-		byte[] data = s.getBytes();
-		DatagramPacket DP = new DatagramPacket(data,data.length,port,IP);
+		
+		
+		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
+		BSB.append(OpCode.REG.value);
+		BSB.pad();
+
+		send(BSB.toByteArray());
+		receive();
+		
+		createTCP();
+		
+		connector = new ServerConnector(server);
+		
+		new Thread(connector).start(); 
+		
+		new Thread (this).start();
+	}
+	
+	private void createTCP(){
 		try {
-			datagramSocket.send(DP);
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-		try{
-			ServerSocket server = new ServerSocket(port);
-			System.out.println("before socket.accept()");
 			
-			socket = server.accept();
-			server.close();
-			
-			System.out.println("input initiate");
-			out = new PrintWriter(socket.getOutputStream(), true);
-	        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-	        System.out.println("after input");
-		} catch (SocketException e) {
-			e.printStackTrace();
+			server = new ServerSocket(5);
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		connectedNames.put("server",socket);
-
-		thread.start();//calls run
-		
 	}
 	
-	/**
-	 * 	A heart beat to show the name server it's "alive".
-	 */
-	
-	private void checkConnection(){
-		//Integer i = Integer.parseInt("0");
-		String s = "0";
-		byte[] data = s.getBytes();
-		DatagramPacket ping = new DatagramPacket(data,data.length,
-				datagramSocket.getLocalPort(),datagramSocket.getRemoteSocketAddress());
+	private String receive() {
+		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
+
 		try{
-			datagramSocket.send(ping);
-		} catch(SocketException e){
-			System.out.println("Socket exception");
-			e.printStackTrace();
-		} catch(IOException e){
-			System.out.println("IO exception");
+			datagramSocket.receive(packet);
+		} catch (IOException e){
 			e.printStackTrace();
 		}
+		String message = new String(packet.getData());
+
+		return message;
+	}
+
+	private void send(byte[] data) {
+
+		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
+		try {
+			datagramSocket.send(packet);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private boolean connect(String ip, int port) {
+	try {
+		datagramSocket = new DatagramSocket(5);
+		address = InetAddress.getByName(ip);
+		}	catch (SocketException e){
+		e.printStackTrace();
+		return false;
+		}	catch (IOException e) {
+		e.printStackTrace();
+		return false;
+		}
+		return true;
 	}
 	
 	/**
@@ -147,7 +139,7 @@ public class Server extends PDU implements Runnable{
 		}
 		return condition;
 	}
-	
+	/*
 	public boolean addSocketToList(Socket socket, String str){
 		connectedNames.put(str, socket);
 		
@@ -169,56 +161,54 @@ public class Server extends PDU implements Runnable{
 				return;
 			}
 		}
-	}
+	}*/
 
 	public void run() {
+
 		String inputLine = "";
-		/*
-		while(noName){
-			
-			try {
-				if((inputLine = in.readLine()) != null){
-				} 
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			
-			out.println(inputLine);
-			out.flush();
-		}*/
+
+		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
+		BSB.append(OpCode.ALIVE.value);
+		BSB.pad();
+
+		alive = BSB.toByteArray();
 
 		while(running){
 			/*
-			checkConnection();
-			DatagramPacket p = null;
-			
-			try {
-				datagramSocket.receive(p);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			
-			String str = p.toString();
-			Integer message = Integer.parseInt(str);
-			
-			if(message.intValue()==1){
-				running = true;
-			} else {
-				running = false;
-			}
+			send(alive);
+			receive();
 			*/
-			
-			//Queue messagequeue if needed.
-			
-			try {
-				if((inputLine = in.readLine()) != null){
-				} 
-			} catch (IOException e) {
-				e.printStackTrace();
+			if(!connector.getQueue().isEmpty()){
+				System.out.println("connector queue isnt empty");
+				Socket socket = connector.getQueue().remove();
+				connectedClients.add(socket);
+				try {
+					outStream = socket.getOutputStream();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				out = new PrintWriter(outStream, true);
+				
+				try {
+					inStream = socket.getInputStream();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+		        in = new BufferedReader(new InputStreamReader(inStream));
 			}
 			
-			out.println(inputLine);
-			out.flush();
+			if(!connectedClients.isEmpty()){
+				System.out.println("we are chating");
+				try {
+					if((inputLine = in.readLine()) != null){
+					} 
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			
+				out.println(inputLine);
+				out.flush();
+			}
 		}
 	}
 	
@@ -229,6 +219,6 @@ public class Server extends PDU implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		Server server = new Server(45);
+		Server server = new Server(1337,"itchy.cs.umu.se");
 	}
 }

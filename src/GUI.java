@@ -30,6 +30,7 @@ public class GUI implements ActionListener{
 	
 	public GUI(int width, int height){
 		
+		queue = new LinkedList<String> ();
 		
 		frame = new JFrame("Login");	
 		message = new JTextField();
@@ -128,7 +129,7 @@ public class GUI implements ActionListener{
 	}
 
 	
-	public LinkedList<String> getQueue(){
+	public synchronized LinkedList<String> getQueue(){
 		return queue;
 	}
 	

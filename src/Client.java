@@ -10,8 +10,8 @@ public class Client extends PDU implements Runnable{
 	private Thread thread;
 	private int port;
 	private InetAddress address;
-	private GUI gui;
-	private String name;
+	private GUI gui,login;
+	private String name = "";
 	private byte[] buffer;
 
 	private boolean connected = true;
@@ -22,11 +22,13 @@ public class Client extends PDU implements Runnable{
 	
 	//client is the name we use
 	
-	public Client(int port,  String ip, String name) {
+	public Client(int port,  String ip) {
 		thread = new Thread("A Client Thread");
-		
+		login = new GUI(360,360);
 		this.port = port;
 		buffer = new byte[256];
+		gui = new GUI();
+
 		
 		if(!connect(ip,port)){
 			System.out.println("Connection failed");
@@ -45,9 +47,9 @@ public class Client extends PDU implements Runnable{
 		send(BSB.toByteArray());
 		System.out.println(receive());
 		
-		/*
+		
 		try{
-			socket = new Socket("localhost",port);
+			socket = new Socket("localhost",5);
 			
 			outStream = socket.getOutputStream();
 			out = new PrintWriter(outStream, true);
@@ -60,7 +62,6 @@ public class Client extends PDU implements Runnable{
 		}
 		
 		thread.start(); // calls run
-		*/
 	}
 
 	private boolean connect(String ip, int port){
@@ -85,8 +86,9 @@ public class Client extends PDU implements Runnable{
 		} catch (IOException e){
 			e.printStackTrace();
 		}
-		System.out.println("message is received");
 		String message = new String(packet.getData());
+		System.out.println("message is received");
+
 		return message;
 	}
 	
@@ -101,23 +103,17 @@ public class Client extends PDU implements Runnable{
 	
 	public void run(){
 	    String receiveMessage = "";
-		/*
-		while(name == null){
+		
+
+		while(name.equals("")){
+			
 			if(!login.getQueue().isEmpty()){
-				name = login.getQueue().remove();
-				out.println(name);
-				out.flush();
-				try{
-		        	if((receiveMessage = in.readLine()) != null){
-		        	}
-		        } catch (IOException e){
-		        	e.printStackTrace();
-		        }
 				
-				login.getNameFromClient(name);
+				name = login.getQueue().remove();
 			}
-		}*/
-		gui = new GUI();
+		}
+		
+	    
 
 		while(connected){
 			
@@ -150,11 +146,9 @@ public class Client extends PDU implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		GUI login = new GUI(360,360);
-		String name = "";
+
 		
-		
-		Client client = new Client(1337,"itchy.cs.umu.se",name);
+		Client client = new Client(1337,"itchy.cs.umu.se");
 	}
 
 
