@@ -1,23 +1,14 @@
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.MulticastSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
+import java.io.*;
+import java.net.*;
 
-
-
-
-
-public class Client extends Thread {
+public class Client extends PDU implements Runnable{
 	
 	@SuppressWarnings("unused")
 	private MulticastSocket multicastSocket;
 	private Socket socket;
+	
+	private Thread thread;
 	
 	private GUI gui;
 	private GUI login;
@@ -32,8 +23,8 @@ public class Client extends Thread {
 	//client is the name we use
 	
 	public Client(int port){
-		super("a Client Thread");
-		
+		thread = new Thread("A Client Thread");
+
 		try{
 			socket = new Socket("localhost",port);
 			
@@ -46,16 +37,17 @@ public class Client extends Thread {
 			e.printStackTrace();
 		}
 		
-		start(); // calls run
+		thread.start(); // calls run
 	}
 
 	public Client(int port, SocketAddress IP){
-		super("a Client Thread");
+		thread = new Thread("A Client Thread");
 	try {
 		multicastSocket = new MulticastSocket(port);
 	} catch (IOException e) {
 		e.printStackTrace();
 		}
+		thread.start();
 	}
 	
 	public void run(){
@@ -108,5 +100,11 @@ public class Client extends Thread {
 	public static void main(String[] args){
 		
 		Client client = new Client(45);
+	}
+
+	@Override
+	public byte[] toByteArray() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

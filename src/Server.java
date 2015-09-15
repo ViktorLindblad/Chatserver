@@ -2,7 +2,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class Server extends Thread {
+public class Server extends PDU implements Runnable{
+	
+	private Thread thread;
 	
 	//sockets
 	private DatagramSocket datagramSocket;
@@ -30,7 +32,7 @@ public class Server extends Thread {
 	private boolean noName = false;
 	
 	public Server(int port){
-		super("Server");
+		thread = new Thread("A Server Thread");
 		this.port = port;
 		connectedNames = new Hashtable<String,Socket>();
 		connectedClients = new ArrayList<String> ();
@@ -52,24 +54,32 @@ public class Server extends Thread {
 			e.printStackTrace();
 		}
 
-		start();//calls run
+		thread.start();//calls run
 		
 	}
 	
-	public Server(int port, SocketAddress IP) throws IOException {
-		super("Server");
+	public Server(int port, SocketAddress IP) {
+		thread = new Thread("A Server Thread");
 		this.port = port;
+		
 		connectedNames = new Hashtable<String,Socket>();
 		connectedClients = new ArrayList<String> ();
+		
 		try{
 			datagramSocket = new DatagramSocket(port);
-		} catch(SocketException e){
+		} catch(SocketException e) {
+			e.printStackTrace();
+		} catch(IOException e) {
 			e.printStackTrace();
 		}
 		String s = "%0";
 		byte[] data = s.getBytes();
 		DatagramPacket DP = new DatagramPacket(data,data.length,port,IP);
-		datagramSocket.send(DP);
+		try {
+			datagramSocket.send(DP);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 		try{
 			ServerSocket server = new ServerSocket(port);
 			System.out.println("before socket.accept()");
@@ -81,13 +91,15 @@ public class Server extends Thread {
 			out = new PrintWriter(socket.getOutputStream(), true);
 	        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 	        System.out.println("after input");
-		} catch (SocketException e){
+		} catch (SocketException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
 		connectedNames.put("server",socket);
 
-		start();//calls run
+		thread.start();//calls run
 		
 	}
 	
@@ -205,13 +217,17 @@ public class Server extends Thread {
 			
 			out.println(inputLine);
 			out.flush();
-
-		
 		}
 	}
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
 		Server server = new Server(45);
+	}
+
+	@Override
+	public byte[] toByteArray() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
