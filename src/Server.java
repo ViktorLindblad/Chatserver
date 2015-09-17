@@ -174,7 +174,7 @@ public class Server extends PDU implements Runnable{
 					
 					ByteSequenceBuilder BSB = new ByteSequenceBuilder();
 					BSB.append(OpCode.ALIVE.value);
-					BSB.appendInt(getServerId());
+					BSB.appendShort((short)getServerId());
 					BSB.pad();
 					
 					System.out.println(getServerId());

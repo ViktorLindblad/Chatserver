@@ -50,7 +50,6 @@ public class Client extends PDU implements Runnable{
 		
 		try{
 			socket = new Socket("localhost",port);
-			
 			outStream = socket.getOutputStream();
 			out = new PrintWriter(outStream, true);
 			
