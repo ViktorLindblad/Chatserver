@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class Server extends PDU implements Runnable{
@@ -7,7 +8,9 @@ public class Server extends PDU implements Runnable{
 	private byte[] buffer,alive;
 	private InetAddress address;
 	private ServerConnector connector;
-	private int serverId;
+	private long serverId;
+	private String serverName;
+	private int TCPport;
 	
 	//sockets
 	private DatagramSocket datagramSocket;
@@ -36,31 +39,25 @@ public class Server extends PDU implements Runnable{
 	
 	public Server(int port,String ip){
 
-		this.port = port;
-		
+		this.TCPport = port;
+		serverName = "Lindblad ID rules";
 		connectedNames = new ArrayList<String>();
 		connectedClients = new ArrayList<Socket> ();
 		queue = new LinkedList<Socket>();
 		messageQueue = new LinkedList<String> ();
 		
-		this.port = port;
 		buffer = new byte[256];
 		alive = new byte[256];
 		
-		if(!connect(ip,port)){
+		if(!connect(ip,1337)){
 			System.out.println("Connection failed");
 		} else {
-			datagramSocket.connect(address, port);
+			datagramSocket.connect(address, 1337);
 		}
 		
 		System.out.println(datagramSocket.isConnected());
 		
-		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
-		BSB.append(OpCode.REG.value);
-		BSB.pad();
-
-		send(BSB.toByteArray());
-		serverId = receive();
+		serverId = regServer();
 		
 		System.out.println(serverId);
 		
@@ -76,14 +73,14 @@ public class Server extends PDU implements Runnable{
 	private void createTCP(){
 		try {
 			
-			server = new ServerSocket(port);
+			server = new ServerSocket(TCPport);
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private int receive() {
+	private byte[] receive() {
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
 
 		try{
@@ -91,12 +88,14 @@ public class Server extends PDU implements Runnable{
 		} catch (IOException e){
 			e.printStackTrace();
 		}
-		return (int)PDU.byteArrayToLong(packet.getData(),0,packet.getLength());
+				
+		return packet.getData();
 	}
 
 	private void send(byte[] data) {
 
-		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
+		System.out.println("sending package, length is: "+data.length);
+		DatagramPacket packet = new DatagramPacket(data,data.length,address,1337);
 		try {
 			datagramSocket.send(packet);
 		} catch (IOException e) {
@@ -106,7 +105,7 @@ public class Server extends PDU implements Runnable{
 
 	private boolean connect(String ip, int port) {
 	try {
-		datagramSocket = new DatagramSocket(0);
+		datagramSocket = new DatagramSocket(1337);
 		address = InetAddress.getByName(ip);
 		}	catch (SocketException e){
 		e.printStackTrace();
@@ -116,6 +115,24 @@ public class Server extends PDU implements Runnable{
 		return false;
 		}
 		return true;
+	}
+	
+	private synchronized int regServer() {
+		byte[] reg = serverName.getBytes(StandardCharsets.UTF_8);
+		byte[] regmessage = new ByteSequenceBuilder(OpCode.REG.value, ((byte) reg.length)).append((byte)TCPport).pad()
+		               .append(reg).pad()
+		 .toByteArray();
+				
+		send(regmessage);
+		
+		byte [] message = receive();
+		if(PDU.byteArrayToLong(message,0,1)==100){
+			send(regmessage);
+			message = receive();
+		}
+		
+		return (int)PDU.byteArrayToLong(message, 3,4);
+		
 	}
 	
 	/**
@@ -168,22 +185,25 @@ public class Server extends PDU implements Runnable{
 	public synchronized void hearthBeat() {
 
 		Thread thread = new Thread(){
-			
 			public void run(){
 				while(getRunning()){
 					
-					ByteSequenceBuilder BSB = new ByteSequenceBuilder();
-					BSB.append(OpCode.ALIVE.value);
-					BSB.appendShort((short)getServerId());
-					BSB.pad();
+					byte[] aliveMessage = new ByteSequenceBuilder(OpCode.ALIVE.value,
+							(byte)connectedClients.size()).append((byte)getServerId()).pad()
+							.toByteArray();
+							
+					send(aliveMessage);
 					
-					System.out.println(getServerId());
+					byte [] message = receive();
 					
-					send(BSB.toByteArray());
-					System.out.println(receive());
+					System.out.println(PDU.byteArrayToLong(message, 0, 1));
+					
+					if(PDU.byteArrayToLong(message, 0, 1)== 100){
+						regServer();
+					}
 					
 					try {
-						Thread.sleep(2000);
+						Thread.sleep(8000);
 						
 					} catch (InterruptedException e) {
 						e.printStackTrace();
@@ -250,12 +270,16 @@ public class Server extends PDU implements Runnable{
 		return running;
 	}
 	
-	public synchronized int getServerId(){
+	public synchronized long getServerId(){
 		return serverId;
+	}
+	
+	public synchronized void setServerId(int id){
+		serverId = id;
 	}
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		Server server = new Server(1337,"itchy.cs.umu.se");
+		Server server = new Server(111,"itchy.cs.umu.se");
 	}
 }
