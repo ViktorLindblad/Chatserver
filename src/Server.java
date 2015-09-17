@@ -120,10 +120,10 @@ public class Server extends PDU implements Runnable{
 	private synchronized int regServer() {
 		byte[] reg = serverName.getBytes(StandardCharsets.UTF_8);
 		byte length = ((byte)serverName.getBytes(StandardCharsets.UTF_8).length);
-		System.out.println(TCPport);
-		System.out.println(reg.length);
+		System.out.println((byte)TCPport);
+		System.out.println(length);
 		
-		byte[] regmessage = new ByteSequenceBuilder(OpCode.REG.value, length).append((byte)this.TCPport).pad().
+		byte[] regmessage = new ByteSequenceBuilder(OpCode.REG.value, length).appendShort((short)this.TCPport).pad().
 		              append(reg).pad()
 		 .toByteArray();
 						
@@ -209,8 +209,11 @@ public class Server extends PDU implements Runnable{
 					
 					System.out.println(getServerId());
 					
-					byte[] aliveMessage = new ByteSequenceBuilder(OpCode.ALIVE.value,
-							(byte)getClients().size()).append((byte)getServerId()).pad()
+					byte clients = (byte)getClients().size();
+					System.out.println(clients);
+					
+					byte[] aliveMessage = new ByteSequenceBuilder(OpCode.ALIVE.value).appendInteger(
+							getClients().size()).pad().appendShort((short)getServerId()).pad()
 							.toByteArray();
 							
 					send(aliveMessage);
