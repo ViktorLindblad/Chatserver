@@ -49,7 +49,7 @@ public class Client extends PDU implements Runnable{
 		
 		
 		try{
-			socket = new Socket("localhost",5);
+			socket = new Socket("localhost",port);
 			
 			outStream = socket.getOutputStream();
 			out = new PrintWriter(outStream, true);
@@ -104,14 +104,14 @@ public class Client extends PDU implements Runnable{
 	public void run(){
 	    String receiveMessage = "";
 		
-
+	    /*
 		while(name.equals("")){
 			
 			if(!login.getQueue().isEmpty()){
 				
 				name = login.getQueue().remove();
 			}
-		}
+		}*/
 		
 	    
 

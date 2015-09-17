@@ -7,6 +7,7 @@ public class Server extends PDU implements Runnable{
 	private byte[] buffer,alive;
 	private InetAddress address;
 	private ServerConnector connector;
+	private int serverId;
 	
 	//sockets
 	private DatagramSocket datagramSocket;
@@ -52,13 +53,16 @@ public class Server extends PDU implements Runnable{
 			datagramSocket.connect(address, port);
 		}
 		
+		System.out.println(datagramSocket.isConnected());
 		
 		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
 		BSB.append(OpCode.REG.value);
 		BSB.pad();
 
 		send(BSB.toByteArray());
-		receive();
+		serverId = receive();
+		
+		System.out.println(serverId);
 		
 		createTCP();
 		
@@ -72,14 +76,14 @@ public class Server extends PDU implements Runnable{
 	private void createTCP(){
 		try {
 			
-			server = new ServerSocket(5);
+			server = new ServerSocket(port);
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private String receive() {
+	private int receive() {
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
 
 		try{
@@ -87,9 +91,7 @@ public class Server extends PDU implements Runnable{
 		} catch (IOException e){
 			e.printStackTrace();
 		}
-		String message = new String(packet.getData());
-
-		return message;
+		return (int)PDU.byteArrayToLong(packet.getData(),0,packet.getLength());
 	}
 
 	private void send(byte[] data) {
@@ -104,7 +106,7 @@ public class Server extends PDU implements Runnable{
 
 	private boolean connect(String ip, int port) {
 	try {
-		datagramSocket = new DatagramSocket(5);
+		datagramSocket = new DatagramSocket(0);
 		address = InetAddress.getByName(ip);
 		}	catch (SocketException e){
 		e.printStackTrace();
@@ -163,28 +165,54 @@ public class Server extends PDU implements Runnable{
 		}
 	}*/
 
+	public synchronized void hearthBeat() {
+
+		Thread thread = new Thread(){
+			
+			public void run(){
+				while(getRunning()){
+					
+					ByteSequenceBuilder BSB = new ByteSequenceBuilder();
+					BSB.append(OpCode.ALIVE.value);
+					BSB.appendInt(getServerId());
+					BSB.pad();
+					
+					System.out.println(getServerId());
+					
+					send(BSB.toByteArray());
+					System.out.println(receive());
+					
+					try {
+						Thread.sleep(2000);
+						
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		};
+		
+		thread.start();
+	}
+	
 	public void run() {
 
 		String inputLine = "";
 
-		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
-		BSB.append(OpCode.ALIVE.value);
-		BSB.pad();
+		hearthBeat();
 
-		alive = BSB.toByteArray();
-
-		while(running){
-			/*
-			send(alive);
-			receive();
-			*/
+		while(getRunning()){			
+			
 			if(!connector.getQueue().isEmpty()){
+				System.out.println("in queue");
 				Socket socket = connector.getQueue().remove();
 				connectedClients.add(socket);
 			}
+
 			for(Socket  temp : connectedClients){
-				
+				// new class ServerMessageHandler e.g. Class which listens after clients message...
 				try {
+					System.out.println("outsream");
 					outStream = temp.getOutputStream();
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -192,27 +220,23 @@ public class Server extends PDU implements Runnable{
 				out = new PrintWriter(outStream, true);
 				
 				try {
+					System.out.println("instream");
 					inStream = temp.getInputStream();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 		        in = new BufferedReader(new InputStreamReader(inStream));
-			}
-			
-			//move upp in other for loop.
-			if(!connectedClients.isEmpty()){
-				for(Socket temp : connectedClients){
-					
-					try {
-						if((inputLine = in.readLine()) != null){
-						} 
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				
-					out.println(inputLine);
-					out.flush();
+		        
+		        try {
+		        	System.out.println("tries to get input line");
+					if((inputLine = in.readLine()) != null){
+					} 
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
+		        System.out.println("sending message to clients");
+				out.println(inputLine);
+				out.flush();
 			}
 		}
 	}
@@ -220,6 +244,14 @@ public class Server extends PDU implements Runnable{
 	public byte[] toByteArray() {
 		
 		return null;
+	}
+	
+	public synchronized boolean getRunning(){
+		return running;
+	}
+	
+	public synchronized int getServerId(){
+		return serverId;
 	}
 	
 	@SuppressWarnings("unused")
