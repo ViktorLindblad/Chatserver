@@ -59,7 +59,7 @@ public class Server extends PDU implements Runnable{
 		
 		serverId = regServer();
 		
-		System.out.println(serverId);
+		System.out.println("Server id"+serverId);
 		
 		createTCP();
 		
@@ -80,7 +80,7 @@ public class Server extends PDU implements Runnable{
 		}
 	}
 	
-	private byte[] receive() {
+	private synchronized byte[] receive() {
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
 
 		try{
@@ -92,7 +92,7 @@ public class Server extends PDU implements Runnable{
 		return packet.getData();
 	}
 
-	private void send(byte[] data) {
+	private synchronized void send(byte[] data) {
 
 		System.out.println("sending package, length is: "+data.length);
 		DatagramPacket packet = new DatagramPacket(data,data.length,address,1337);
@@ -126,12 +126,18 @@ public class Server extends PDU implements Runnable{
 		send(regmessage);
 		
 		byte [] message = receive();
-		if(PDU.byteArrayToLong(message,0,1)==100){
+		byte [] opCode;
+		byte [] id;
+		opCode = Arrays.copyOfRange(message,0, 1);
+		id = Arrays.copyOfRange(message, 3, 7);
+		if(PDU.byteArrayToLong(opCode,0,1) == 100){
 			send(regmessage);
 			message = receive();
 		}
 		
-		return (int)PDU.byteArrayToLong(message, 3,4);
+		System.out.println(id.length);
+		
+		return (int)PDU.byteArrayToLong(id, 0,3);
 		
 	}
 	
@@ -182,14 +188,23 @@ public class Server extends PDU implements Runnable{
 		}
 	}*/
 
-	public synchronized void hearthBeat() {
+	public void hearthBeat() {
 
 		Thread thread = new Thread(){
 			public void run(){
 				while(getRunning()){
 					
+					try {
+						Thread.sleep(8000);
+						
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					
+					System.out.println(getServerId());
+					
 					byte[] aliveMessage = new ByteSequenceBuilder(OpCode.ALIVE.value,
-							(byte)connectedClients.size()).append((byte)getServerId()).pad()
+							(byte)getClients().size()).append((byte)getServerId()).pad()
 							.toByteArray();
 							
 					send(aliveMessage);
@@ -200,13 +215,6 @@ public class Server extends PDU implements Runnable{
 					
 					if(PDU.byteArrayToLong(message, 0, 1)== 100){
 						regServer();
-					}
-					
-					try {
-						Thread.sleep(8000);
-						
-					} catch (InterruptedException e) {
-						e.printStackTrace();
 					}
 				}
 			}
@@ -223,10 +231,12 @@ public class Server extends PDU implements Runnable{
 
 		while(getRunning()){			
 			
-			if(!connector.getQueue().isEmpty()){
+			if(!connector.getSocketQueue().isEmpty()){
 				System.out.println("in queue");
-				Socket socket = connector.getQueue().remove();
+				Socket socket = connector.getSocketQueue().remove();
 				connectedClients.add(socket);
+				ServerMessageHandler SMH = new ServerMessageHandler(socket);
+				new Thread(SMH).start();
 			}
 
 			for(Socket  temp : connectedClients){
@@ -276,6 +286,10 @@ public class Server extends PDU implements Runnable{
 	
 	public synchronized void setServerId(int id){
 		serverId = id;
+	}
+	
+	public synchronized ArrayList<Socket> getClients(){
+		return connectedClients;
 	}
 	
 	@SuppressWarnings("unused")

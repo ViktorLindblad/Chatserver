@@ -29,15 +29,15 @@ public class ServerConnector implements Runnable {
 		}
 	}
 	
-	public boolean getRunning(){
+	public synchronized boolean getConnectorRunning(){
 		return running;
 	}
 	
-	public void setRunning(boolean condition){
+	public synchronized void setConnectorRunning(boolean condition){
 		running = condition;
 	}
 	
-	public synchronized LinkedList<Socket> getQueue(){
+	public synchronized LinkedList<Socket> getSocketQueue(){
 		return queue;
 	}
 	
