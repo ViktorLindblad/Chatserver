@@ -8,9 +8,9 @@ public class Server extends PDU implements Runnable{
 	private byte[] buffer,alive;
 	private InetAddress address;
 	private ServerConnector connector;
-	private long serverId;
+	private int serverId;
 	private String serverName;
-	private int TCPport;
+	private int  TCPport;
 	
 	//sockets
 	private DatagramSocket datagramSocket;
@@ -49,6 +49,8 @@ public class Server extends PDU implements Runnable{
 		buffer = new byte[256];
 		alive = new byte[256];
 		
+		createTCP();
+		
 		if(!connect(ip,1337)){
 			System.out.println("Connection failed");
 		} else {
@@ -57,12 +59,10 @@ public class Server extends PDU implements Runnable{
 		
 		System.out.println(datagramSocket.isConnected());
 		
-		serverId = regServer();
+		setServerId(regServer());
 		
 		System.out.println("Server id"+serverId);
-		
-		createTCP();
-		
+				
 		connector = new ServerConnector(server);
 		
 		new Thread(connector).start(); 
@@ -119,24 +119,30 @@ public class Server extends PDU implements Runnable{
 	
 	private synchronized int regServer() {
 		byte[] reg = serverName.getBytes(StandardCharsets.UTF_8);
-		byte[] regmessage = new ByteSequenceBuilder(OpCode.REG.value, ((byte) reg.length)).append((byte)TCPport).pad()
-		               .append(reg).pad()
+		byte length = ((byte)serverName.getBytes(StandardCharsets.UTF_8).length);
+		System.out.println(TCPport);
+		System.out.println(reg.length);
+		
+		byte[] regmessage = new ByteSequenceBuilder(OpCode.REG.value, length).append((byte)this.TCPport).pad().
+		              append(reg).pad()
 		 .toByteArray();
-				
+						
 		send(regmessage);
 		
 		byte [] message = receive();
 		byte [] opCode;
 		byte [] id;
+		
 		opCode = Arrays.copyOfRange(message,0, 1);
 		id = Arrays.copyOfRange(message, 3, 7);
+		
 		if(PDU.byteArrayToLong(opCode,0,1) == 100){
 			send(regmessage);
 			message = receive();
+		} else if(PDU.byteArrayToLong(opCode,0,1) == 1){
+			System.out.println("Regged");
 		}
-		
-		System.out.println(id.length);
-		
+				
 		return (int)PDU.byteArrayToLong(id, 0,3);
 		
 	}
@@ -215,6 +221,8 @@ public class Server extends PDU implements Runnable{
 					
 					if(PDU.byteArrayToLong(message, 0, 1)== 100){
 						regServer();
+					} else if(PDU.byteArrayToLong(message, 0, 1)==1){
+						System.out.println("still regged");
 					}
 				}
 			}
@@ -280,7 +288,7 @@ public class Server extends PDU implements Runnable{
 		return running;
 	}
 	
-	public synchronized long getServerId(){
+	public synchronized int getServerId(){
 		return serverId;
 	}
 	
