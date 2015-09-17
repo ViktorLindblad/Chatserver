@@ -134,7 +134,7 @@ public class Server extends PDU implements Runnable{
 		byte [] id;
 		
 		opCode = Arrays.copyOfRange(message,0, 1);
-		id = Arrays.copyOfRange(message, 3, 7);
+		id = Arrays.copyOfRange(message, 2, 4);
 		
 		if(PDU.byteArrayToLong(opCode,0,1) == 100){
 			send(regmessage);
@@ -143,7 +143,7 @@ public class Server extends PDU implements Runnable{
 			System.out.println("Regged");
 		}
 				
-		return (int)PDU.byteArrayToLong(id, 0,3);
+		return (int)PDU.byteArrayToLong(id, 0,2);
 		
 	}
 	
@@ -212,8 +212,8 @@ public class Server extends PDU implements Runnable{
 					byte clients = (byte)getClients().size();
 					System.out.println(clients);
 					
-					byte[] aliveMessage = new ByteSequenceBuilder(OpCode.ALIVE.value).appendInteger(
-							getClients().size()).pad().appendShort((short)getServerId()).pad()
+					byte[] aliveMessage = new ByteSequenceBuilder(OpCode.ALIVE.value).append(
+							(byte)getClients().size()).appendShort((short)getServerId()).pad()
 							.toByteArray();
 							
 					send(aliveMessage);
