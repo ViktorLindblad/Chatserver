@@ -6,13 +6,17 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64.Decoder;
 
 public class Client extends PDU implements Runnable{
 	
@@ -21,7 +25,7 @@ public class Client extends PDU implements Runnable{
 	
 	private ArrayList<String> serverNames;
 	private ArrayList<Integer> serverPort;
-	private ArrayList<InetAddress> adresses;
+	private ArrayList<Inet4Address> adresses;
 
 
 	private Thread thread;
@@ -49,7 +53,7 @@ public class Client extends PDU implements Runnable{
 		serverNames = new ArrayList<String>();
 		serverPort = new ArrayList<Integer>();
 
-		adresses = new ArrayList<InetAddress>();
+		adresses = new ArrayList<Inet4Address>();
 		
 		if(!connect(ip,port)){
 			System.out.println("Connection failed");
@@ -63,51 +67,48 @@ public class Client extends PDU implements Runnable{
 				.toByteArray();
 		send(getlist);
 		message = receive();
-		
-		
+				System.out.println(multicastSocket.getLocalAddress());
 		if(PDU.byteArrayToLong(message,0,1) == 4){
 			
 			sequenceNumber = (int)PDU.byteArrayToLong(message,1,2);
 			int servers = (int)PDU.byteArrayToLong(message,2,4);
-			
-			int adress = 4;
-			byte[] tempstring;
-			System.out.println(servers);
+			int byteIndex = 4;
+
 			for(int i = 0; i < servers; i++){
-				
-				tempstring = Arrays.copyOfRange(message,adress, adress+2);
-				String server = new String(tempstring);
-				adress+=2;
-				tempstring = Arrays.copyOfRange(message,adress, adress+2);
-				server += new String(tempstring);
-				System.out.println(server);
-				adress+=2;
+
+				byte[] tempbytes = Arrays.copyOfRange(message,byteIndex, byteIndex+4);
+				byteIndex +=4;
 				try {
-					adresses.add(InetAddress.getByName(server));
+					adresses.add((Inet4Address) Inet4Address.getByAddress(tempbytes));
 				} catch (UnknownHostException e) {
 					e.printStackTrace();
 				}
-				System.out.println(adress);
 				
-				int tempint = (int)PDU.byteArrayToLong(message,adress,adress+2);
-				adress += 2;
+				int tempint = (int)PDU.byteArrayToLong(message,byteIndex,byteIndex+2);
+				byteIndex += 2;
 				serverPort.add(tempint);
 				
-				tempint =  (int)PDU.byteArrayToLong(message,adress,adress+1);
-				adress += 1;
+				tempint =  (int)PDU.byteArrayToLong(message,byteIndex,byteIndex+1);
+				byteIndex += 1;
 				serverPort.add(tempint);
 				
-				tempint = (int)PDU.byteArrayToLong(message,adress,adress+1);
-				adress += 1;
-				tempstring = Arrays.copyOfRange(message,adress, adress+2);
-				adress+=2;
-				server = new String(tempstring);
-				tempstring = Arrays.copyOfRange(message, adress, adress+2);
-				server += new String(tempstring);
+				tempint = (int)PDU.byteArrayToLong(message,byteIndex,byteIndex+1);
+				byteIndex += 1;
+
+				byte[] bytes = Arrays.copyOfRange(message,byteIndex, byteIndex+32);
+
+				String server = PDU.bytaArrayToString(bytes,tempint);
+				byteIndex +=4;
 				serverNames.add(server);
 			}
 			for(String temp : serverNames){
 				System.out.println("serverName: "+temp);
+			}
+			for(Inet4Address temp : adresses){
+				System.out.println(temp);
+			}
+			for(int temp : serverPort){
+				System.out.println(temp);
 			}
 			
 			

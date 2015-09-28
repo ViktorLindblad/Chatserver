@@ -1,3 +1,5 @@
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -90,5 +92,24 @@ public abstract class PDU {
             result += ((long) bytes[i]) & 0xff;
         }
         return result;
+    }
+    
+    public static String bytaArrayToString(byte[] bytes, int length) {
+
+    	 String string = "";
+    	 ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+    	 BufferedInputStream bfi = new BufferedInputStream(bais);
+    	 int integer;
+    		 
+    	 try {
+    		 for(int i = 0; i < length; i++){
+    		 	integer = bfi.read();
+    		 	string += (char)integer;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    	 
+         return string;
     }
 }
