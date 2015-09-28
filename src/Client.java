@@ -1,23 +1,7 @@
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.DatagramPacket;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64.Decoder;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 public class Client extends PDU implements Runnable{
 	
@@ -46,7 +30,7 @@ public class Client extends PDU implements Runnable{
 	
 	public Client(int port,  String ip) {
 		thread = new Thread("A Client Thread");
-		login = new GUI(360,360);
+		//login = new GUI(360,360);
 		this.port = port;
 		buffer = new byte[256];
 		gui = new GUI();
@@ -68,11 +52,10 @@ public class Client extends PDU implements Runnable{
 
 		byte[] getlist = new ByteSequenceBuilder(OpCode.GETLIST.value).pad()
 				.toByteArray();
-		System.out.println(getlist.length);
+		
 		send(getlist);
 		message = receive();
 
-				System.out.println(multicastSocket.getLocalAddress());
 		if(PDU.byteArrayToLong(message,0,1) == 4){
 			
 			sequenceNumber = (int)PDU.byteArrayToLong(message,1,2);
@@ -127,6 +110,9 @@ public class Client extends PDU implements Runnable{
 				}
 				
 			}
+			
+		infoToClient();
+			/*
 			for(String temp : serverNames){
 				System.out.println("serverName: "+temp);
 			}
@@ -135,13 +121,35 @@ public class Client extends PDU implements Runnable{
 			}
 			for(int temp : serverPort){
 				System.out.println(temp);
-			}
-			
-			
+			}*/
 		}
+		thread.start(); // calls run
+
+	}
+	
+	private void infoToClient(){
+		int index = 0;
+		int intIndex = 0;
+		if(!serverNames.isEmpty()){
+			for(String temp : serverNames){
+				gui.getStringFromClient("Server name: "+serverNames.get(index));
+				gui.getStringFromClient("Address: "+adresses.get(index));
+				gui.getStringFromClient("Port: "+serverPort.get(intIndex));
+				intIndex++;
+				gui.getStringFromClient("Clients: "+serverPort.get(intIndex));
+				index++;
+				intIndex++;
+			}
+		} else{
+			gui.getStringFromClient("No servers at this time");
+
+		}
+	}
+	
+	private void connectToTCP(int port,Inet4Address ip){
 		
 		try{
-			socket = new Socket("localhost",1345);
+			socket = new Socket(ip,1345);
 			outStream = socket.getOutputStream();
 			out = new PrintWriter(outStream, true);
 			
@@ -152,7 +160,6 @@ public class Client extends PDU implements Runnable{
 			e.printStackTrace();
 		}
 		
-		thread.start(); // calls run
 	}
 
 	private boolean connect(String ip, int port){
@@ -201,7 +208,6 @@ public class Client extends PDU implements Runnable{
 			}
 		}*/
 		
-	    
 
 		while(connected){
 			
@@ -234,15 +240,6 @@ public class Client extends PDU implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		String string = "Anti-Skynet";
-		System.out.println(string.length());
-		try {
-			byte[] utf = string.getBytes("UTF-8");
-			System.out.println(utf.length);
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
 		Client client = new Client(1337,"itchy.cs.umu.se");
 	}
