@@ -39,17 +39,13 @@ public class Client extends PDU implements Runnable{
 		
 		System.out.println(multicastSocket.isConnected());
 		
-		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
-		BSB.append(OpCode.GETLIST.value);
-		BSB.pad();
-		System.out.println(BSB.size());
-		System.out.println("sending "+BSB.toByteArray());
-		send(BSB.toByteArray());
-		System.out.println(receive());
-		
+		byte[] getlist = new ByteSequenceBuilder(OpCode.GETLIST.value).pad()
+				.toByteArray();
+		send(getlist);
+		receive();
 		
 		try{
-			socket = new Socket("localhost",port);
+			socket = new Socket("localhost",111);
 			outStream = socket.getOutputStream();
 			out = new PrintWriter(outStream, true);
 			
@@ -65,7 +61,7 @@ public class Client extends PDU implements Runnable{
 
 	private boolean connect(String ip, int port){
 		try {
-			multicastSocket = new MulticastSocket(0);
+			multicastSocket = new MulticastSocket(port);
 			address = InetAddress.getByName(ip);
 		}	catch (SocketException e){
 			e.printStackTrace();
@@ -77,18 +73,15 @@ public class Client extends PDU implements Runnable{
 		return true;
 	}
 	
-	private String receive(){
+	private byte[] receive(){
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
-		System.out.println("receiving");
 		try{
 			multicastSocket.receive(packet);
 		} catch (IOException e){
 			e.printStackTrace();
 		}
-		String message = new String(packet.getData());
-		System.out.println("message is received");
 
-		return message;
+		return packet.getData();
 	}
 	
 	private void send(byte[] data){

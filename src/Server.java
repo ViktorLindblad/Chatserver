@@ -212,8 +212,10 @@ public class Server extends PDU implements Runnable{
 					byte clients = (byte)getClients().size();
 					System.out.println(clients);
 					
-					byte[] aliveMessage = new ByteSequenceBuilder(OpCode.ALIVE.value).append(
-							(byte)getClients().size()).appendShort((short)getServerId()).pad()
+					byte[] aliveMessage = new ByteSequenceBuilder
+							(OpCode.ALIVE.value)
+							.append((byte)getClients().size())
+							.appendShort((short)getServerId()).pad()
 							.toByteArray();
 							
 					send(aliveMessage);
