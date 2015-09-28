@@ -1,14 +1,31 @@
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Client extends PDU implements Runnable{
 	
 	private MulticastSocket multicastSocket;
 	private Socket socket;
 	
+	private ArrayList<String> serverNames;
+	private ArrayList<Integer> serverPort;
+	private ArrayList<InetAddress> adresses;
+
+
 	private Thread thread;
-	private int port;
+	private int port, sequenceNumber;
 	private InetAddress address;
 	private GUI gui,login;
 	private String name = "";
@@ -28,21 +45,73 @@ public class Client extends PDU implements Runnable{
 		this.port = port;
 		buffer = new byte[256];
 		gui = new GUI();
+		
+		serverNames = new ArrayList<String>();
+		serverPort = new ArrayList<Integer>();
 
+		adresses = new ArrayList<InetAddress>();
 		
 		if(!connect(ip,port)){
 			System.out.println("Connection failed");
 		} else {
-			System.out.println(address);
 			multicastSocket.connect(address, port);
 		}
-		
-		System.out.println(multicastSocket.isConnected());
-		
+				
+		byte[] message;
+
 		byte[] getlist = new ByteSequenceBuilder(OpCode.GETLIST.value).pad()
 				.toByteArray();
 		send(getlist);
-		receive();
+		message = receive();
+		
+		
+		if(PDU.byteArrayToLong(message,0,1) == 4){
+			
+			sequenceNumber = (int)PDU.byteArrayToLong(message,1,2);
+			int servers = (int)PDU.byteArrayToLong(message,2,4);
+			
+			int adress = 4;
+			byte[] tempstring;
+			System.out.println(servers);
+			for(int i = 0; i < servers; i++){
+				
+				tempstring = Arrays.copyOfRange(message,adress, adress+2);
+				String server = new String(tempstring);
+				adress+=2;
+				tempstring = Arrays.copyOfRange(message,adress, adress+2);
+				server += new String(tempstring);
+				System.out.println(server);
+				adress+=2;
+				try {
+					adresses.add(InetAddress.getByName(server));
+				} catch (UnknownHostException e) {
+					e.printStackTrace();
+				}
+				System.out.println(adress);
+				
+				int tempint = (int)PDU.byteArrayToLong(message,adress,adress+2);
+				adress += 2;
+				serverPort.add(tempint);
+				
+				tempint =  (int)PDU.byteArrayToLong(message,adress,adress+1);
+				adress += 1;
+				serverPort.add(tempint);
+				
+				tempint = (int)PDU.byteArrayToLong(message,adress,adress+1);
+				adress += 1;
+				tempstring = Arrays.copyOfRange(message,adress, adress+2);
+				adress+=2;
+				server = new String(tempstring);
+				tempstring = Arrays.copyOfRange(message, adress, adress+2);
+				server += new String(tempstring);
+				serverNames.add(server);
+			}
+			for(String temp : serverNames){
+				System.out.println("serverName: "+temp);
+			}
+			
+			
+		}
 		
 		try{
 			socket = new Socket("localhost",111);
@@ -61,7 +130,7 @@ public class Client extends PDU implements Runnable{
 
 	private boolean connect(String ip, int port){
 		try {
-			multicastSocket = new MulticastSocket(port);
+			multicastSocket = new MulticastSocket(1);
 			address = InetAddress.getByName(ip);
 		}	catch (SocketException e){
 			e.printStackTrace();
