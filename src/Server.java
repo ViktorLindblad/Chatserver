@@ -40,7 +40,7 @@ public class Server extends PDU implements Runnable{
 	public Server(int port,String ip){
 
 		this.TCPport = port;
-		serverName = "Lindblad ID rules";
+		serverName = "Lindblad";
 		connectedNames = new ArrayList<String>();
 		connectedClients = new ArrayList<Socket> ();
 		queue = new LinkedList<Socket>();
@@ -307,6 +307,6 @@ public class Server extends PDU implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		Server server = new Server(111,"itchy.cs.umu.se");
+		Server server = new Server(1345,"itchy.cs.umu.se");
 	}
 }

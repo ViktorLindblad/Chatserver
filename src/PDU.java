@@ -94,13 +94,12 @@ public abstract class PDU {
         return result;
     }
     
-    public static String bytaArrayToString(byte[] bytes, int length) {
+    public static String bytaArrayToString(byte[] bit, int length) {
 
     	 String string = "";
-    	 ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+    	 ByteArrayInputStream bais = new ByteArrayInputStream(bit);
     	 BufferedInputStream bfi = new BufferedInputStream(bais);
     	 int integer;
-    		 
     	 try {
     		 for(int i = 0; i < length; i++){
     		 	integer = bfi.read();
