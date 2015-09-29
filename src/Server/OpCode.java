@@ -12,7 +12,7 @@ public enum OpCode {
     	SLIST(4),
     	NOTREG(100),
     	MESSAGE(10),
-    QUIT(11),
+    	QUIT(11),
     	JOIN(12),
     	CHNICK(13),
     UJOIN(16),
