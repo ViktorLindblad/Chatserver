@@ -6,16 +6,16 @@ import java.util.LinkedList;
 
 public class ServerMessageHandler implements Runnable {
 	
-	private LinkedList <String> messageQueue; 
+	private LinkedList <byte[]> messageQueue; 
 	private Socket socket;
 	private InputStream inStream;
-	private BufferedReader buffRead;
+	private DataInputStream dataInput;
 	private boolean running;
 	
 	public ServerMessageHandler(Socket socket){
 		
 		this.socket = socket;
-		messageQueue = new LinkedList <String>();
+		messageQueue = new LinkedList <byte[]>();
 		
 	}
 
@@ -23,20 +23,23 @@ public class ServerMessageHandler implements Runnable {
 	public void run() {
 		
 		while(running){
-			
+			ByteSequenceBuilder BSB = new ByteSequenceBuilder();
 			try{
 				inStream = socket.getInputStream();
+				dataInput = new DataInputStream(inStream);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 	       
-			buffRead = new BufferedReader(new InputStreamReader(inStream));
+			try {
+				while(dataInput.read() != -1){
+					BSB.append(dataInput.readByte());
+				}
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		    
-	        try {
-				messageQueue.add(buffRead.readLine());
-			} catch (IOException e) {
-				e.printStackTrace();
-			} 
+	        messageQueue.add(BSB.toByteArray()); 
 		}
 	}
 	
@@ -48,7 +51,7 @@ public class ServerMessageHandler implements Runnable {
 		return running;
 	}
 	
-	public synchronized LinkedList <String> getMessageQueue(){
+	public synchronized LinkedList <byte[]> getMessageQueue(){
 		return messageQueue;
 	}
 }

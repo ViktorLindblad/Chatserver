@@ -1,10 +1,8 @@
 package Server;
-import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -12,9 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.LinkedList;
 
 import PDU.ALIVE;
 import PDU.PDU;
@@ -27,26 +23,21 @@ public class Server implements Runnable{
 	private ServerConnector connector;
 	private int serverId;
 	private String serverName;
-	private int  TCPport;
+	
 	
 	//sockets
 	private DatagramSocket datagramSocket;
-	private Socket socket;
 	private ServerSocket server;
+	private Socket socket;
 	
 	//port
-	private int port;
+	private int port, TCPport;
 	
 	//Lists
 	private ArrayList<String> connectedNames;
 	private ArrayList<Socket> connectedClients;
-	private LinkedList<Socket> queue;
-	private LinkedList<String> messageQueue;
-
-	
+	private ArrayList<ServerMessageHandler> SMH;
 	//input & output
-	private PrintWriter out;
-    private BufferedReader in;
     private OutputStream outStream;
     private InputStream inStream;
 	
@@ -61,9 +52,7 @@ public class Server implements Runnable{
 		
 		connectedNames = new ArrayList<String>();
 		connectedClients = new ArrayList<Socket> ();
-		queue = new LinkedList<Socket>();
-		messageQueue = new LinkedList<String> ();
-		
+		SMH = new ArrayList<ServerMessageHandler> ();
 		buffer = new byte[256];
 		alive = new byte[256];
 		
@@ -257,45 +246,59 @@ public class Server implements Runnable{
 		while(getRunning()){			
 			
 			if(!connector.getSocketQueue().isEmpty()){
-				System.out.println("in queue");
+				System.out.println("A client connected");
 				Socket socket = connector.getSocketQueue().remove();
 				connectedClients.add(socket);
-				ServerMessageHandler SMH = new ServerMessageHandler(socket);
-				new Thread(SMH).start();
+				ServerMessageHandler messageHandler = new ServerMessageHandler(socket);
+				SMH.add(messageHandler);
+				new Thread(messageHandler).start();
 			}
-
-			for(Socket  temp : connectedClients){
-				// new class ServerMessageHandler e.g. Class which listens after clients message...
-				try {
-					System.out.println("outsream");
-					outStream = temp.getOutputStream();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				out = new PrintWriter(outStream, true);
+			for(ServerMessageHandler temp : SMH){
 				
-				try {
-					System.out.println("instream");
-					inStream = temp.getInputStream();
-				} catch (IOException e) {
-					e.printStackTrace();
+				if(!temp.getMessageQueue().isEmpty()){
+					buffer = temp.getMessageQueue().remove();
 				}
-		        in = new BufferedReader(new InputStreamReader(inStream));
-		        
-		        try {
-		        	System.out.println("tries to get input line");
-					if((inputLine = in.readLine()) != null){
-					} 
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-		        System.out.println("sending message to clients");
-				out.println(inputLine);
-				out.flush();
+				
 			}
+			int ca = (int)PDU.byteArrayToLong(buffer,0,1);
+			
+			switch(ca){
+				case(11):
+					
+				break;
+				case(12):
+					
+				break;
+				case(13):
+					
+				break;
+				case(14):
+					
+				break;
+				default:
+				
+				break;
+			}
+			
+			
 		}
 	}
 	
+	private void sendTCPToAll(byte[] message) {
+		for(Socket temp : connectedClients){
+			
+			DataOutputStream DO;
+			
+			try {
+				DO = new DataOutputStream(temp.getOutputStream());
+				DO.write(message);
+				DO.flush();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+	}
+
 	public synchronized boolean getRunning(){
 		return running;
 	}

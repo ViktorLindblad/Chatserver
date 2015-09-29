@@ -10,7 +10,7 @@ public class MESS extends PDU{
 
 	private Checksum checksum;
 	
-	public MESS(String message, String name, boolean isClient){
+	public MESS(String message, String name, boolean isClient) {
 		
 		long time = System.currentTimeMillis() / 1000L;
 		

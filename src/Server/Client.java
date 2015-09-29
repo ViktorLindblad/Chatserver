@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import PDU.GETLIST;
+import PDU.JOIN;
 import PDU.PDU;
 
 public class Client implements Runnable{
@@ -31,9 +32,8 @@ public class Client implements Runnable{
 	private ArrayList<Integer> serverPort;
 	private ArrayList<Inet4Address> adresses;
 	private ArrayList<Integer> serverClients;
-
 	
-	private DataInputStream dataInput;
+	
 
 	private Thread thread;
 	private int port, sequenceNumber, servers;
@@ -48,7 +48,7 @@ public class Client implements Runnable{
 	private OutputStream outStream;
 	private InputStream inStream;
 	private DataOutputStream dataOutput;
-	
+	private DataInputStream dataInput;
 	//client is the name we use
 	
 	public Client(int port,  String ip) {
@@ -58,8 +58,7 @@ public class Client implements Runnable{
 		buffer = new byte[256];
 		gui = new GUI();
 		
-		servers = 0;
-
+		servers = 0;		
 		
 		if(!connect(ip,port)){
 			System.out.println("Connection failed");
@@ -140,18 +139,6 @@ public class Client implements Runnable{
 				
 				}
 			}
-			
-		
-			/*
-			for(String temp : serverNames){
-				System.out.println("serverName: "+temp);
-			}
-			for(Inet4Address temp : adresses){
-				System.out.println(temp);
-			}
-			for(int temp : serverPort){
-				System.out.println(temp);
-			}*/
 		}
 	}
 	
@@ -183,26 +170,23 @@ public class Client implements Runnable{
 	
 	
 	private byte[] receiveTCP() {
-
-		byte[] message = null;
-		
+		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
 		try {
-			int length = dataInput.readInt();
-			if(length > 0){
-				message = new byte[length];
-				dataInput.readFully(message, 0, message.length);
+			
+			while(dataInput.read() !=-1){
+				BSB.append((byte)dataInput.read());
 			}
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
-		return message;
+		return BSB.toByteArray();
 	}
 	
 	private void sendTCP(byte[] bytes) {
 		
 		try {
-			dataOutput.writeInt(bytes.length);
 			dataOutput.write(bytes);
 			dataOutput.flush();
 		} catch (IOException e) {
@@ -224,7 +208,11 @@ public class Client implements Runnable{
 			dataInput = new DataInputStream(inStream);
 			dataOutput = new DataOutputStream(outStream);
 			connected = true;
-			gui.getStringFromClient("Connected!");
+			
+			JOIN join = new JOIN(name);
+			
+			sendTCP(join.toByteArray());
+			
 		} catch(IOException e){
 			e.printStackTrace();
 		}
@@ -274,23 +262,35 @@ public class Client implements Runnable{
 		}
 	}
 	
-	public void run(){
+	public void run() {
 		String message;
 		int server=0;
 		while(running){
-			if(gui.getUpdate()){
+			if(gui.getUpdate()) {
 				getlist();
 				infoToClient();
 				gui.setUpdate(false);
 			}
 			
-			if(!gui.getQueue().isEmpty()){
+			if(!gui.getQueue().isEmpty()) {
 				message = gui.getQueue().removeFirst();
 				server = Integer.parseInt(message);
 			}
 			
-			if(server != 0 && server <= serverNames.size() ){
+			if(server != 0 && server <= serverNames.size() ) {
+				
+				gui.getStringFromClient("Chose your nickname!");
+				
+				boolean choosen = false;
+				do{
+					if(!gui.getQueue().isEmpty()){
+						name = gui.getQueue().removeFirst();
+						choosen = true;
+					}
+				}while(!choosen);
+				
 				connectToTCP(serverPort.get(server-1),adresses.get(server-1));
+				receiveTCP();
 				server = 0;
 			}
 			while(connected){
