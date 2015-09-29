@@ -1,9 +1,26 @@
+package Server;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-public class Client extends PDU implements Runnable{
+import PDU.PDU;
+
+public class Client implements Runnable{
 	
 	private MulticastSocket multicastSocket;
 	private Socket socket;
@@ -12,9 +29,11 @@ public class Client extends PDU implements Runnable{
 	private ArrayList<Integer> serverPort;
 	private ArrayList<Inet4Address> adresses;
 
+	
+	private DataInputStream dataInput;
 
 	private Thread thread;
-	private int port, sequenceNumber;
+	private int port, sequenceNumber, servers;
 	private InetAddress address;
 	private GUI gui,login;
 	private String name = "";
@@ -24,7 +43,8 @@ public class Client extends PDU implements Runnable{
 	private PrintWriter out;
 	private BufferedReader in;
 	private OutputStream outStream;
-	private InputStream inStream;	
+	private InputStream inStream;
+	private DataOutputStream dataOutput;
 	
 	//client is the name we use
 	
@@ -34,6 +54,8 @@ public class Client extends PDU implements Runnable{
 		this.port = port;
 		buffer = new byte[256];
 		gui = new GUI();
+		
+		servers = 0;
 		
 		serverNames = new ArrayList<String>();
 		serverPort = new ArrayList<Integer>();
@@ -59,7 +81,7 @@ public class Client extends PDU implements Runnable{
 		if(PDU.byteArrayToLong(message,0,1) == 4){
 			
 			sequenceNumber = (int)PDU.byteArrayToLong(message,1,2);
-			int servers = (int)PDU.byteArrayToLong(message,2,4);
+			servers = (int)PDU.byteArrayToLong(message,2,4);
 			int byteIndex = 4;
 			int tempint;
 			byte[] tempbytes;
@@ -132,11 +154,14 @@ public class Client extends PDU implements Runnable{
 		int intIndex = 0;
 		if(!serverNames.isEmpty()){
 			for(String temp : serverNames){
+				index++;
+				gui.getStringFromClient("Server number: "+index);
+				index--;
 				gui.getStringFromClient("Server name: "+serverNames.get(index));
 				gui.getStringFromClient("Address: "+adresses.get(index));
 				gui.getStringFromClient("Port: "+serverPort.get(intIndex));
 				intIndex++;
-				gui.getStringFromClient("Clients: "+serverPort.get(intIndex));
+				gui.getStringFromClient("Clients: "+serverPort.get(intIndex)+"\n");
 				index++;
 				intIndex++;
 			}
@@ -144,18 +169,62 @@ public class Client extends PDU implements Runnable{
 			gui.getStringFromClient("No servers at this time");
 
 		}
+		gui.getStringFromClient("Please choose server to start chatting: ");
+		
+		getChoiceFromGUI();
 	}
 	
-	private void connectToTCP(int port,Inet4Address ip){
+	private void getChoiceFromGUI(){
+		do{
+			if(!gui.getQueue().isEmpty()) {
+
+			}
+			
+		}while(gui.getQueue().isEmpty());
+	}
+	
+	
+	private byte[] receiveTCP() {
+
+		byte[] message = null;
+		
+		try {
+			int length = dataInput.readInt();
+			if(length > 0){
+				message = new byte[length];
+				dataInput.readFully(message, 0, message.length);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return message;
+	}
+	
+	private void sendTCP(byte[] bytes) {
+		
+		try {
+			dataOutput.writeInt(bytes.length);
+			dataOutput.write(bytes);
+			dataOutput.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private void connectToTCP(int port,Inet4Address ip) {
 		
 		try{
-			socket = new Socket(ip,1345);
+			socket = new Socket(ip,port);
 			outStream = socket.getOutputStream();
 			out = new PrintWriter(outStream, true);
 			
 			inStream = socket.getInputStream();
 	        in = new BufferedReader(new InputStreamReader(inStream));
-	        
+			dataInput = new DataInputStream(inStream);
+			dataOutput = new DataOutputStream(outStream);
+
 		} catch(IOException e){
 			e.printStackTrace();
 		}
@@ -232,11 +301,6 @@ public class Client extends PDU implements Runnable{
 	        
 		}
 	}
-	
-	public byte[] toByteArray() {
-		return buffer;
-	}
-
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){

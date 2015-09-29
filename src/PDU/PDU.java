@@ -1,3 +1,4 @@
+package PDU;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -8,6 +9,8 @@ import java.io.InputStream;
  */
 public abstract class PDU {
 
+	protected byte[] bytes;
+	
     /**
      * Reads the OpCode from the InputStream and determines the type of
      * the PDU. Then a PDU of the correct subclass is read from the stream.

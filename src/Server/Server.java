@@ -1,9 +1,12 @@
+package Server;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class Server extends PDU implements Runnable{
+import PDU.PDU;
+
+public class Server implements Runnable{
 	
 	private byte[] buffer,alive;
 	private InetAddress address;
@@ -57,12 +60,8 @@ public class Server extends PDU implements Runnable{
 			datagramSocket.connect(address, 1337);
 		}
 		
-		System.out.println(datagramSocket.isConnected());
-		
 		setServerId(regServer());
-		
-		System.out.println("Server id"+serverId);
-				
+						
 		connector = new ServerConnector(server);
 		
 		new Thread(connector).start(); 
@@ -198,6 +197,7 @@ public class Server extends PDU implements Runnable{
 
 		Thread thread = new Thread(){
 			public void run(){
+				long time;
 				while(getRunning()){
 					
 					try {
@@ -207,10 +207,9 @@ public class Server extends PDU implements Runnable{
 						e.printStackTrace();
 					}
 					
-					System.out.println(getServerId());
+					time = System.nanoTime() * 1000000000;
 					
 					byte clients = (byte)getClients().size();
-					System.out.println(clients);
 					
 					byte[] aliveMessage = new ByteSequenceBuilder
 							(OpCode.ALIVE.value)
@@ -222,12 +221,12 @@ public class Server extends PDU implements Runnable{
 					
 					byte [] message = receive();
 					
-					System.out.println(PDU.byteArrayToLong(message, 0, 1));
+					System.out.println("PDU number: "+PDU.byteArrayToLong(message, 0, 1));
 					
 					if(PDU.byteArrayToLong(message, 0, 1)== 100){
 						regServer();
 					} else if(PDU.byteArrayToLong(message, 0, 1)==1){
-						System.out.println("still regged");
+						System.out.println("still regged "+time);
 					}
 				}
 			}
@@ -305,6 +304,18 @@ public class Server extends PDU implements Runnable{
 		return connectedClients;
 	}
 	
+	private byte[] joinPDU(){
+		String nickname = "PinkFluffyUnicorn";//get from gueue, remove()
+		byte[] nickBytes = nickname.getBytes(StandardCharsets.UTF_8);
+		byte length = ((byte)nickname.getBytes(StandardCharsets.UTF_8).length);
+		byte[] join = new ByteSequenceBuilder(OpCode.JOIN.value, length).pad()
+				.append(nickBytes).pad().toByteArray();
+		return join;			
+		
+	}	
+			
+
+		
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
 		Server server = new Server(1345,"itchy.cs.umu.se");

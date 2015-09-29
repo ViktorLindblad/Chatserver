@@ -1,3 +1,4 @@
+package Server;
 
 /**
  * Enum for representing OpCodes.
