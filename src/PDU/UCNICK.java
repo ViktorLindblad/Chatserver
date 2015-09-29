@@ -1,5 +1,7 @@
 package PDU;
 
+import java.nio.charset.StandardCharsets;
+
 import Server.ByteSequenceBuilder;
 import Server.OpCode;
 
@@ -10,11 +12,11 @@ public class UCNICK extends PDU{
 		long time = System.currentTimeMillis() / 1000L;
 		
 		bytes = new ByteSequenceBuilder(OpCode.UCNICK.value)
-		.append((byte)oldName.length())
-		.append((byte)newName.length()).pad()
+		.append((byte)oldName.getBytes(StandardCharsets.UTF_8).length)
+		.append((byte)newName.getBytes(StandardCharsets.UTF_8).length).pad()
 		.appendInt((int)time)
-		.append(oldName.getBytes()).pad()
-		.append(newName.getBytes()).pad().toByteArray();
+		.append(oldName.getBytes(StandardCharsets.UTF_8)).pad()
+		.append(newName.getBytes(StandardCharsets.UTF_8)).pad().toByteArray();
 	}
 	
 	public byte[] toByteArray() {

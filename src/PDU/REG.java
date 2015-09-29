@@ -8,9 +8,12 @@ public class REG extends PDU{
 
 	public REG(String serverName, int TCPport){
 		byte[] reg = serverName.getBytes(StandardCharsets.UTF_8);
-		byte length = ((byte)serverName.getBytes(StandardCharsets.UTF_8).length);		
-		bytes = new ByteSequenceBuilder(OpCode.REG.value, length).appendShort((short)TCPport).
-		              append(reg).pad().toByteArray();
+		byte length = ((byte)serverName.
+				getBytes(StandardCharsets.UTF_8).length);
+		
+		bytes = new ByteSequenceBuilder(OpCode.REG.value, length)
+			.appendShort((short)TCPport)
+			.append(reg).pad().toByteArray();
 	}
 
 
