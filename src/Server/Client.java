@@ -102,7 +102,7 @@ public class Client implements Runnable{
 				byteIndex +=4;
 
 				try {
-					adresses.add((Inet4Address) Inet4Address.getByAddress(tempbytes));
+					adresses.add((Inet4Address)Inet4Address.getByAddress(tempbytes));
 				} catch (UnknownHostException e) {
 					e.printStackTrace();
 				}
@@ -212,9 +212,10 @@ public class Client implements Runnable{
 	}
 	
 	private void connectToTCP(int port,Inet4Address ip) {
-		
+
 		try{
-			socket = new Socket(ip,port);
+			
+			socket = new Socket(ip.getCanonicalHostName(),port);
 			outStream = socket.getOutputStream();
 			out = new PrintWriter(outStream, true);
 			
@@ -223,6 +224,7 @@ public class Client implements Runnable{
 			dataInput = new DataInputStream(inStream);
 			dataOutput = new DataOutputStream(outStream);
 			connected = true;
+			gui.getStringFromClient("Connected!");
 		} catch(IOException e){
 			e.printStackTrace();
 		}
