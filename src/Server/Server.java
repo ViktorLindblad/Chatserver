@@ -1,10 +1,24 @@
 package Server;
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
+import PDU.ALIVE;
 import PDU.PDU;
+import PDU.REG;
 
 public class Server implements Runnable{
 	
@@ -44,6 +58,7 @@ public class Server implements Runnable{
 
 		this.TCPport = port;
 		serverName = "Lindblad";
+		
 		connectedNames = new ArrayList<String>();
 		connectedClients = new ArrayList<Socket> ();
 		queue = new LinkedList<Socket>();
@@ -81,14 +96,22 @@ public class Server implements Runnable{
 	
 	private synchronized byte[] receive() {
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
-
-		try{
-			datagramSocket.receive(packet);
-		} catch (IOException e){
-			e.printStackTrace();
-		}
+		
+		while(true){// recieve data until timeout
+	     
+			try {
+				datagramSocket.receive(packet);
+				return packet.getData();
 				
-		return packet.getData();
+			} catch (SocketTimeoutException e) {
+				// timeout exception.
+				System.out.println("Timeout reached!!! " + e);
+				datagramSocket.close();
+	     	} catch (IOException e) {
+	        e.printStackTrace();
+	     	}
+	    }
+				
 	}
 
 	private synchronized void send(byte[] data) {
@@ -97,6 +120,7 @@ public class Server implements Runnable{
 		DatagramPacket packet = new DatagramPacket(data,data.length,address,1337);
 		try {
 			datagramSocket.send(packet);
+			datagramSocket.setSoTimeout(1000);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -117,32 +141,24 @@ public class Server implements Runnable{
 	}
 	
 	private synchronized int regServer() {
-		byte[] reg = serverName.getBytes(StandardCharsets.UTF_8);
-		byte length = ((byte)serverName.getBytes(StandardCharsets.UTF_8).length);
-		System.out.println((byte)TCPport);
-		System.out.println(length);
+
+		REG reg = new REG(serverName,TCPport);
 		
-		byte[] regmessage = new ByteSequenceBuilder(OpCode.REG.value, length).appendShort((short)this.TCPport).pad().
-		              append(reg).pad()
-		 .toByteArray();
-						
-		send(regmessage);
+		send(reg.toByteArray());
 		
 		byte [] message = receive();
-		byte [] opCode;
-		byte [] id;
+
 		
-		opCode = Arrays.copyOfRange(message,0, 1);
-		id = Arrays.copyOfRange(message, 2, 4);
-		
-		if(PDU.byteArrayToLong(opCode,0,1) == 100){
-			send(regmessage);
+		if(PDU.byteArrayToLong(message,0,1) == 100){
+			
+			send(reg.toByteArray());
 			message = receive();
-		} else if(PDU.byteArrayToLong(opCode,0,1) == 1){
+			
+		} else if(PDU.byteArrayToLong(message,0,1) == 1){
 			System.out.println("Regged");
 		}
 				
-		return (int)PDU.byteArrayToLong(id, 0,2);
+		return (int)PDU.byteArrayToLong(message, 2,4);//ID number
 		
 	}
 	
@@ -197,7 +213,9 @@ public class Server implements Runnable{
 
 		Thread thread = new Thread(){
 			public void run(){
+				
 				long time;
+				
 				while(getRunning()){
 					
 					try {
@@ -208,16 +226,11 @@ public class Server implements Runnable{
 					}
 					
 					time = System.nanoTime() * 1000000000;
-					
-					byte clients = (byte)getClients().size();
-					
-					byte[] aliveMessage = new ByteSequenceBuilder
-							(OpCode.ALIVE.value)
-							.append((byte)getClients().size())
-							.appendShort((short)getServerId()).pad()
-							.toByteArray();
+										
+					ALIVE alive = 
+							new ALIVE(getClients().size(),getServerId());
 							
-					send(aliveMessage);
+					send(alive.toByteArray());
 					
 					byte [] message = receive();
 					
@@ -283,11 +296,6 @@ public class Server implements Runnable{
 		}
 	}
 	
-	public byte[] toByteArray() {
-		
-		return null;
-	}
-	
 	public synchronized boolean getRunning(){
 		return running;
 	}
@@ -302,19 +310,7 @@ public class Server implements Runnable{
 	
 	public synchronized ArrayList<Socket> getClients(){
 		return connectedClients;
-	}
-	
-	private byte[] joinPDU(){
-		String nickname = "PinkFluffyUnicorn";//get from gueue, remove()
-		byte[] nickBytes = nickname.getBytes(StandardCharsets.UTF_8);
-		byte length = ((byte)nickname.getBytes(StandardCharsets.UTF_8).length);
-		byte[] join = new ByteSequenceBuilder(OpCode.JOIN.value, length).pad()
-				.append(nickBytes).pad().toByteArray();
-		return join;			
-		
 	}	
-			
-
 		
 	@SuppressWarnings("unused")
 	public static void main(String[] args){

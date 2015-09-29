@@ -7,6 +7,7 @@ import Server.OpCode;
 public class REG extends PDU{
 
 	public REG(String serverName, int TCPport){
+		
 		byte[] reg = serverName.getBytes(StandardCharsets.UTF_8);
 		byte length = ((byte)serverName.
 				getBytes(StandardCharsets.UTF_8).length);

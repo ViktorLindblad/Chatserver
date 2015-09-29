@@ -12,7 +12,10 @@ public class GUI implements ActionListener{
 
 	private JPanel panel;
 
+	private boolean updateServers;
+	
 	private JButton button;
+	private JButton update;
 	
 	private LinkedList<String> queue;
 	private String chatString = "";
@@ -71,6 +74,8 @@ public class GUI implements ActionListener{
 	
 	public GUI(){
 		
+		updateServers = false;
+		
 		queue = new LinkedList<String> ();
 
 		frame = new JFrame("client");
@@ -81,6 +86,7 @@ public class GUI implements ActionListener{
 		
 		panel = new JPanel();
 		button = new JButton("Send message");
+		update = new JButton("Update");
 		
 		chatScroll = new JScrollPane(chatbox);
 		clientsScroll = new JScrollPane(clients);
@@ -94,6 +100,7 @@ public class GUI implements ActionListener{
 		
 		panel.add(clients);
 		panel.add(button);
+		panel.add(update);
 
 		frame.setSize(620,360);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -125,7 +132,10 @@ public class GUI implements ActionListener{
 		clientsScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		button.setBounds(450,250,150,32);
 		
+		update.setBounds(450,210,150,32);
+		
 		button.addActionListener(this);
+		update.addActionListener(this);
 
 	}
 
@@ -139,12 +149,17 @@ public class GUI implements ActionListener{
 	}
 
 	public void actionPerformed(ActionEvent e) {
+		if(e.getSource() == update){
+			setUpdate(true);
+		}
+		
 		if(e.getSource() == button){
 			if(message.getText() != ""){
 				addStringToQueue(message.getText());
 				message.setText("");
 			}
 		}
+		
 	}
 	
 	public void getStringFromClient(String string){
@@ -163,6 +178,14 @@ public class GUI implements ActionListener{
 	
 	public String getName(){
 		return name;
+	}
+	
+	public synchronized void setUpdate(boolean condition){
+		updateServers = condition;
+	}
+	
+	public synchronized boolean getUpdate(){
+		return updateServers;
 	}
 	
 }

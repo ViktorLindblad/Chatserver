@@ -14,10 +14,12 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import PDU.GETLIST;
 import PDU.PDU;
 
 public class Client implements Runnable{
@@ -49,33 +51,38 @@ public class Client implements Runnable{
 	//client is the name we use
 	
 	public Client(int port,  String ip) {
-		thread = new Thread("A Client Thread");
+
 		//login = new GUI(360,360);
 		this.port = port;
 		buffer = new byte[256];
 		gui = new GUI();
 		
 		servers = 0;
-		
-		serverNames = new ArrayList<String>();
-		serverPort = new ArrayList<Integer>();
 
-		adresses = new ArrayList<Inet4Address>();
 		
 		if(!connect(ip,port)){
 			System.out.println("Connection failed");
 		} else {
 			multicastSocket.connect(address, port);
 		}
-				
+		getlist();	
+
+		infoToClient();
+		
+		new Thread (this).start();
+		
+	}
+	
+	private void getlist(){
 		byte[] message;
 		
+		serverNames = new ArrayList<String>();
+		serverPort = new ArrayList<Integer>();
+		adresses = new ArrayList<Inet4Address>();
 		
-
-		byte[] getlist = new ByteSequenceBuilder(OpCode.GETLIST.value).pad()
-				.toByteArray();
+		GETLIST getList = new GETLIST();
 		
-		send(getlist);
+		send(getList.toByteArray());
 		message = receive();
 
 		if(PDU.byteArrayToLong(message,0,1) == 4){
@@ -130,10 +137,9 @@ public class Client implements Runnable{
 					byteIndex += tempint+1;
 				
 				}
-				
 			}
 			
-		infoToClient();
+		
 			/*
 			for(String temp : serverNames){
 				System.out.println("serverName: "+temp);
@@ -145,8 +151,6 @@ public class Client implements Runnable{
 				System.out.println(temp);
 			}*/
 		}
-		thread.start(); // calls run
-
 	}
 	
 	private void infoToClient(){
@@ -169,19 +173,11 @@ public class Client implements Runnable{
 			gui.getStringFromClient("No servers at this time");
 
 		}
-		gui.getStringFromClient("Please choose server to start chatting: ");
+		gui.getStringFromClient("Please choose server to start chatting or update: \n");
 		
-		getChoiceFromGUI();
 	}
 	
-	private void getChoiceFromGUI(){
-		do{
-			if(!gui.getQueue().isEmpty()) {
 
-			}
-			
-		}while(gui.getQueue().isEmpty());
-	}
 	
 	
 	private byte[] receiveTCP() {
@@ -247,19 +243,28 @@ public class Client implements Runnable{
 	
 	private byte[] receive(){
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
+	while(true){
 		try{
+			
 			multicastSocket.receive(packet);
+			return packet.getData();
+			
+		} catch (SocketTimeoutException e){
+			System.out.println("Time out reached!");
+			e.printStackTrace();
 		} catch (IOException e){
 			e.printStackTrace();
 		}
+	}
 
-		return packet.getData();
+		
 	}
 	
 	private void send(byte[] data){
 		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
 		try {
 			multicastSocket.send(packet);
+			multicastSocket.setSoTimeout(1000);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -268,18 +273,17 @@ public class Client implements Runnable{
 	public void run(){
 	    String receiveMessage = "";
 		
-	    /*
-		while(name.equals("")){
-			
-			if(!login.getQueue().isEmpty()){
-				
-				name = login.getQueue().remove();
-			}
-		}*/
-		
+
+		System.out.println("runnning ");
 
 		while(connected){
 			
+			if(gui.getUpdate()){
+				getlist();
+				infoToClient();
+				gui.setUpdate(false);
+			}
+			/*
 	        if(!gui.getQueue().isEmpty()){
 				out.println(gui.getQueue().remove());
 		        out.flush();
@@ -298,6 +302,7 @@ public class Client implements Runnable{
 	        if(receiveMessage.length() > 0){
         		gui.getStringFromClient(receiveMessage);
 	        }
+	        */
 	        
 		}
 	}
