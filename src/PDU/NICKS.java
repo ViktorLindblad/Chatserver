@@ -1,20 +1,25 @@
 package PDU;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 import Server.ByteSequenceBuilder;
 import Server.OpCode;
 
 public class NICKS extends PDU{
 	
-	public NICKS(String nickname){
-		byte[] nickBytes = nickname.getBytes(StandardCharsets.UTF_8);
+	public NICKS(ArrayList<String> names){
 		
-		byte length = ((byte)nickname
-				.getBytes(StandardCharsets.UTF_8).length);
+		int numberOfNicks = names.size();
 		
-		bytes = new ByteSequenceBuilder(OpCode.NICKS.value, length).pad()
-				.append(nickBytes).pad().toByteArray();		
+		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
+		for(int i = 0; i < numberOfNicks; i++){
+			BSB.append(names.get(i).getBytes(StandardCharsets.UTF_8)).pad();
+		}
+
+		bytes = new ByteSequenceBuilder(OpCode.NICKS.value) 
+				.append((byte)numberOfNicks).pad()
+				.append(BSB.toByteArray()).pad().toByteArray();		
 	}
 
 

@@ -54,4 +54,8 @@ public class ServerMessageHandler implements Runnable {
 	public synchronized LinkedList <byte[]> getMessageQueue(){
 		return messageQueue;
 	}
+	
+	public synchronized Socket getSocket(){
+		return socket;
+	}
 }

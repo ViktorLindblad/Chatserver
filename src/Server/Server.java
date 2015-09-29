@@ -11,10 +11,14 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import PDU.ALIVE;
+import PDU.NICKS;
 import PDU.PDU;
 import PDU.REG;
+import PDU.UJOIN;
+import PDU.ULEAVE;
 
 public class Server implements Runnable{
 	
@@ -256,34 +260,65 @@ public class Server implements Runnable{
 			for(ServerMessageHandler temp : SMH){
 				
 				if(!temp.getMessageQueue().isEmpty()){
+					
 					buffer = temp.getMessageQueue().remove();
+					
+					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
+					
+					switch(ca){
+						case(10)://MESS
+							
+						break;
+						case(11)://QUIT
+							ULEAVE leave = new ULEAVE("");
+							sendTCPToAll(leave.toByteArray());
+						break;
+						case(12)://JOIN
+							String name = readJoinMessage(buffer);
+						
+							answerJoin(temp.getSocket());
+						
+							UJOIN join = new UJOIN(name);
+							sendTCPToAll(join.toByteArray());
+						break;
+						case(13)://CHNICK
+							
+						break;
+						default:
+						
+						break;
+					}
 				}
 				
 			}
-			int ca = (int)PDU.byteArrayToLong(buffer,0,1);
 			
-			switch(ca){
-				case(11):
-					
-				break;
-				case(12):
-					
-				break;
-				case(13):
-					
-				break;
-				case(14):
-					
-				break;
-				default:
-				
-				break;
-			}
 			
 			
 		}
 	}
 	
+	private void answerJoin(Socket temp) {
+		DataOutputStream DO;
+			NICKS nick = new NICKS(connectedNames);
+		try {
+			DO = new DataOutputStream(temp.getOutputStream());
+			DO.write(nick.toByteArray());
+			DO.flush();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	private String readJoinMessage(byte[] bytes) {
+		
+		int nameLength = (int)PDU.byteArrayToLong(bytes,1,2);
+		
+		byte[] tempbytes = Arrays.copyOfRange(bytes,4, 4+nameLength);
+		
+		return PDU.bytaArrayToString(tempbytes, nameLength);
+
+	}
+
 	private void sendTCPToAll(byte[] message) {
 		for(Socket temp : connectedClients){
 			
@@ -314,6 +349,8 @@ public class Server implements Runnable{
 	public synchronized ArrayList<Socket> getClients(){
 		return connectedClients;
 	}	
+	
+	
 		
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
