@@ -30,6 +30,7 @@ public class Client implements Runnable{
 	private ArrayList<String> serverNames;
 	private ArrayList<Integer> serverPort;
 	private ArrayList<Inet4Address> adresses;
+	private ArrayList<Integer> serverClients;
 
 	
 	private DataInputStream dataInput;
@@ -41,7 +42,7 @@ public class Client implements Runnable{
 	private String name = "";
 	private byte[] buffer;
 
-	private boolean connected = true;
+	private boolean running , connected = false;
 	private PrintWriter out;
 	private BufferedReader in;
 	private OutputStream outStream;
@@ -68,7 +69,7 @@ public class Client implements Runnable{
 		getlist();	
 
 		infoToClient();
-		
+		running = true;
 		new Thread (this).start();
 		
 	}
@@ -79,6 +80,7 @@ public class Client implements Runnable{
 		serverNames = new ArrayList<String>();
 		serverPort = new ArrayList<Integer>();
 		adresses = new ArrayList<Inet4Address>();
+		serverClients = new ArrayList<Integer>();
 		
 		GETLIST getList = new GETLIST();
 		
@@ -113,7 +115,7 @@ public class Client implements Runnable{
 				tempint =  (int)PDU.byteArrayToLong(message,byteIndex,byteIndex+1);
 
 				byteIndex += 1;
-				serverPort.add(tempint);
+				serverClients.add(tempint);
 				
 				tempint = (int)PDU.byteArrayToLong(message,byteIndex,byteIndex+1);
 
@@ -155,19 +157,19 @@ public class Client implements Runnable{
 	
 	private void infoToClient(){
 		int index = 0;
-		int intIndex = 0;
+
 		if(!serverNames.isEmpty()){
 			for(String temp : serverNames){
+				
 				index++;
 				gui.getStringFromClient("Server number: "+index);
 				index--;
+				
 				gui.getStringFromClient("Server name: "+serverNames.get(index));
 				gui.getStringFromClient("Address: "+adresses.get(index));
-				gui.getStringFromClient("Port: "+serverPort.get(intIndex));
-				intIndex++;
-				gui.getStringFromClient("Clients: "+serverPort.get(intIndex)+"\n");
+				gui.getStringFromClient("Port: "+serverPort.get(index));
+				gui.getStringFromClient("Clients: "+serverClients.get(index)+"\n");
 				index++;
-				intIndex++;
 			}
 		} else{
 			gui.getStringFromClient("No servers at this time");
@@ -220,7 +222,7 @@ public class Client implements Runnable{
 	        in = new BufferedReader(new InputStreamReader(inStream));
 			dataInput = new DataInputStream(inStream);
 			dataOutput = new DataOutputStream(outStream);
-
+			connected = true;
 		} catch(IOException e){
 			e.printStackTrace();
 		}
@@ -271,18 +273,35 @@ public class Client implements Runnable{
 	}
 	
 	public void run(){
-	    String receiveMessage = "";
-		
-
-		System.out.println("runnning ");
-
-		while(connected){
-			
+		String message;
+		int server=0;
+		while(running){
 			if(gui.getUpdate()){
 				getlist();
 				infoToClient();
 				gui.setUpdate(false);
 			}
+			
+			if(!gui.getQueue().isEmpty()){
+				message = gui.getQueue().removeFirst();
+				server = Integer.parseInt(message);
+			}
+			
+			if(server != 0 && server <= serverNames.size() ){
+				connectToTCP(serverPort.get(server-1),adresses.get(server-1));
+				server = 0;
+			}
+			while(connected){
+				
+			}
+		}
+		
+			
+			
+			
+			
+			
+			
 			/*
 	        if(!gui.getQueue().isEmpty()){
 				out.println(gui.getQueue().remove());
@@ -304,7 +323,7 @@ public class Client implements Runnable{
 	        }
 	        */
 	        
-		}
+		
 	}
 	
 	@SuppressWarnings("unused")

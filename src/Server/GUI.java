@@ -122,6 +122,7 @@ public class GUI implements ActionListener{
 		
 		clients.setBounds(450,0,150,200);
 		chatScroll.setBounds(0,0,400,200);
+		chatScroll.scrollRectToVisible(chatbox.getBounds());
 		
 		chatbox.setBackground(Color.MAGENTA);
 		clients.setBackground(Color.magenta);
