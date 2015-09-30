@@ -3,9 +3,16 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 
 
 public class GUI implements ActionListener{
@@ -21,6 +28,7 @@ public class GUI implements ActionListener{
 	
 	private LinkedList<String> queue;
 	private LinkedList<String> nickQueue;
+	
 	private String chatString = "";
 	private String name = "";
 	private String clientNames = "";
@@ -175,11 +183,13 @@ public class GUI implements ActionListener{
 		}
 	}
 	
-	public void getNameFromClient(String string){
-		if(string != ""){
-			clientNames += string + "\n";
-			clients.setText(clientNames);
+	public void getNameFromClient(ArrayList<String> nickNames){
+		
+		for(String temp : nickNames) {
+			clientNames += temp + "\n";
 		}
+		clients.replaceSelection(clientNames);
+		
 	}
 	
 	public String getName(){

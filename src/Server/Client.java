@@ -24,6 +24,9 @@ import PDU.QUIT;
 
 public class Client implements Runnable{
 	
+	private static final int MESS = 10, QUIT = 11, UJOIN = 16, ULEAVE = 17,
+							UCNICK = 18, NICKS = 19, NICKO = 20; 
+	
 	private MulticastSocket multicastSocket;
 	private Socket socket;
 	
@@ -167,17 +170,17 @@ public class Client implements Runnable{
 
 	
 	
-	private byte[] receiveTCP() {
+	private void receiveTCP() {
 		int length;
-		byte[] message = null;
+		buffer = null;
 		try {
 			length = dataInput.readInt();
-			message = PDU.readExactly(inStream, length);
+			buffer = new byte[length];
+			buffer = PDU.readExactly(inStream, length);
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}   
-		return message;
 		
 		
 		/*ByteSequenceBuilder BSB = new ByteSequenceBuilder();
@@ -230,7 +233,7 @@ public class Client implements Runnable{
 		
 		sendTCP(join.toByteArray());
 		
-		buffer = receiveTCP();
+		receiveTCP();
 		if(PDU.byteArrayToLong(buffer, 0, 1)==20){
 			gui.getStringFromClient("Nickname occupied! Please try again \n");
 			try {
@@ -316,7 +319,7 @@ public class Client implements Runnable{
 								adresses.get(server-1)));
 				
 				System.out.println("receiving message");
-				buffer = receiveTCP();
+				
 				System.out.println("received message");
 				gui.getStringFromClient(String.valueOf(PDU.byteArrayToLong(buffer, 0, 1)));
 				
@@ -324,35 +327,30 @@ public class Client implements Runnable{
 			}
 			while(connected){			
 				boolean isClient = true;
+				
 				if(!gui.getQueue().isEmpty()){
-					
-					if(gui.getQuit()) {
-						gui.setQuit(false);
-						
-						QUIT quit = new QUIT();
-						sendTCP(quit.toByteArray());
-						
-						try {
-							socket.close();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-					}
-					
+
 					message=gui.getQueue().removeFirst();
 					MESS mess = new MESS(message, name, isClient);
 					sendTCP(mess.toByteArray());	
 				}
 				
+				if(gui.getQuit()) {
+					gui.setQuit(false);
+					
+					QUIT quit = new QUIT();
+					sendTCP(quit.toByteArray());
+					
+					try {
+						socket.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+				receiveTCP();
+				checkMessage(buffer);
 			}
 		}
-		
-			
-			
-			
-			
-			
-			
 			/*
 	        if(!gui.getQueue().isEmpty()){
 				out.println(gui.getQueue().remove());
@@ -373,8 +371,44 @@ public class Client implements Runnable{
         		gui.getStringFromClient(receiveMessage);
 	        }
 	        */
-	        
+	}
+	
+	private void checkMessage(byte[] bytes){
+		int ca = (int)PDU.byteArrayToLong(bytes, 0, 1);
 		
+		switch(ca){
+			case(MESS):
+			break;
+			
+			case(QUIT):
+			break;
+			
+			case(UJOIN):
+				int length = (int)PDU.byteArrayToLong(bytes, 1, 2);
+				byte[] nickbytes = Arrays.copyOfRange(bytes,8,8+length);
+				
+				String nick = PDU.bytaArrayToString(nickbytes, length);
+				
+				nickNames.add(nick);
+				gui.getNameFromClient(nickNames);
+				
+			break;
+			
+			case(ULEAVE):
+			break;
+			
+			case(UCNICK):
+			break;
+			
+			case(NICKS):
+			break;
+			
+			case(NICKO):
+			break;
+			
+			default:
+			break;
+		}
 	}
 	
 	private void chooseNickName(){
