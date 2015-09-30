@@ -218,6 +218,7 @@ public class GUI implements ActionListener, Runnable{
 			
 			if(!getQueue().isEmpty()&&socket!=null){
 				message = getQueue().removeFirst();
+				System.out.println(message);
 				MESS mess = new MESS(message, name, true);
 				sendTCP(mess.toByteArray());
 			}

@@ -11,40 +11,35 @@ public class MESS extends PDU{
 	
 	public MESS(String message, String name, boolean isClient) {
 		
-		long time = System.currentTimeMillis() / 1000L;
+		long time = System.currentTimeMillis();
 		int checksum = 0;
 		byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
 		int lengthMessage = message.getBytes
 									(StandardCharsets.UTF_8).length;
-		System.out.println("messageLength: "+lengthMessage);
 		if(isClient){
-			byte length = 0; 
+			int length = 0; 
 			time = 0;
 			
-			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).pad()
-					.append(length)
+			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).padshort()
 					.appendShort((short)lengthMessage).pad()
-					.appendInt((int)time)
 					.append(messageBytes).pad().toByteArray();
 			if(bytes.length>255) {
 				checksum = bytes.length - 255;
 			}
 			bytes = null;
 			
-			System.out.println(checksum);
 			
-			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).pad()
-					.append(length)
+			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).padshort()
 					.append((byte)checksum)
 					.appendShort((short)lengthMessage).pad()
-					.appendInt((int)time)
 					.append(messageBytes).pad().toByteArray();
-			
+			System.out.println("bytes: "+bytes.length);
+			System.out.println(messageBytes.length);
 		} else {
-			byte length = (byte) name.getBytes().length;
+			int length = name.getBytes().length;
 
-			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).pad()
-					.append(length)
+			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).padshort()
+					.append((byte)length)
 					.appendShort((short)lengthMessage).pad()
 					.appendInt((int)time)
 					.append(messageBytes).pad()
@@ -53,18 +48,22 @@ public class MESS extends PDU{
 			
 			if(bytes.length>255) {
 				checksum = bytes.length - 255;
-			}			bytes = null;
+			}		
+			bytes = null;
 			
-			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).pad()
-					.append(length)
+			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).padshort()
+					.append((byte)length)
 					.append((byte)checksum)
 					.appendShort((short)lengthMessage).pad()
 					.appendInt((int)time)
 					.append(messageBytes).pad()
 					.append(name.getBytes(StandardCharsets.UTF_8))
 					.pad().toByteArray();
+			System.out.println("bytes: "+bytes.length);
+			System.out.println(name.getBytes(StandardCharsets.UTF_8).length);
+			System.out.println(messageBytes.length);
+
 		}	
-		System.out.println(bytes.length);
 	}
 	
 	public byte[] toByteArray() {

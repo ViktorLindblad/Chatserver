@@ -360,17 +360,21 @@ public class Client implements Runnable{
 		
 		switch(ca){
 			case(MESS):
-				int nameLength = (int)PDU.byteArrayToLong(buffer, 2, 3);
-				int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
-				time = (int)PDU.byteArrayToLong(buffer, 8, 12);
-				byte[] tempBytes = Arrays.copyOfRange(buffer,12, 12+messageLength);
-				String message = PDU.bytaArrayToString(tempBytes, messageLength);
-				byte[] tempname = Arrays.copyOfRange(buffer, 12+messageLength, 12+messageLength+nameLength);
-
-				String messname = PDU.bytaArrayToString(tempname, nameLength);
+				int nameLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
+				System.out.println("nameLength "+nameLength);
+				int messageLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
+				System.out.println("messageLength: "+messageLength);
+				time = (int)PDU.byteArrayToLong(bytes, 8, 12);
 				
-				String mess = messname+ "said: "+message+"At timestamp:"+String.valueOf(time);
+				String message = PDU.StringBuilder(bytes, 12);
+				System.out.println("received message : "+message);
+				
+				String messname = PDU.StringBuilder(bytes, 12+messageLength);
+				
+				String mess = messname+ "said: "+message+" At timestamp:"+String.valueOf(time);
+				
 				gui.getStringFromClient(mess);
+				
 			break;
 			
 			case(QUIT):

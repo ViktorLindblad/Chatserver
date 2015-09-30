@@ -152,7 +152,6 @@ public class Server implements Runnable{
 			message = receive();
 			
 		} else if(PDU.byteArrayToLong(message,0,1) == 1){
-			System.out.println("Regged");
 		}
 				
 		return (int)PDU.byteArrayToLong(message, 2,4);//ID number
@@ -231,12 +230,10 @@ public class Server implements Runnable{
 					
 					byte [] message = receive();
 					
-					System.out.println("PDU number: "+PDU.byteArrayToLong(message, 0, 1));
 					
 					if(PDU.byteArrayToLong(message, 0, 1)== 100){
 						regServer();
 					} else if(PDU.byteArrayToLong(message, 0, 1)==1){
-						System.out.println("still regged "+time);
 					}
 				}
 			}
@@ -283,20 +280,22 @@ public class Server implements Runnable{
 					}
 					switch(ca) {
 						case(MESS)://MESS
+							for(int i=0; i<buffer.length; i++){
+								System.out.println(buffer[i]);
+							}
 							System.out.println("-------------------------------------------message received");
-							int nameLength = (int)PDU.byteArrayToLong(buffer, 2, 3);
-							System.out.println(nameLength);
 							int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
-							System.out.println(messageLength);
-							byte[] tempBytes = Arrays.copyOfRange(buffer, 12, 12+messageLength);
-							String message = PDU.bytaArrayToString(tempBytes, messageLength);
-							System.out.println(message);
-							byte[] tempname = Arrays.copyOfRange(buffer, 12+messageLength, 12+messageLength+nameLength);
+							System.out.println("L"+messageLength);
+							
+							String message = PDU.StringBuilder(buffer, 8);
 
-							String messname = PDU.bytaArrayToString(tempname, nameLength);
+							System.out.println("m "+message);
+							System.out.println("Namn "+messageName);
+
 							Boolean isClient = false;
-						
-							MESS mess = new MESS(message, messname, isClient);
+							
+							MESS mess = new MESS(message, messageName, isClient);
+							System.out.println("send: "+mess.toByteArray().length);
 							sendTCPToAll(mess.toByteArray());
 							
 						break;

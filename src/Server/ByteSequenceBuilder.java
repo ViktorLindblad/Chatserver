@@ -95,4 +95,9 @@ public final class ByteSequenceBuilder {
         }
         return this;
     }
+
+	public ByteSequenceBuilder padshort() {
+		bytes.add((byte) 0);
+		return this;
+	}
 }

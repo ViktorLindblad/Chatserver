@@ -3,6 +3,8 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.Arrays;
 
 /**
  * Super class of all PDUs with methods for reading PDUs from InputStreams.
@@ -111,7 +113,26 @@ public abstract class PDU {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-    	 
+    	 System.out.println("String is:");
          return string;
+    }
+    
+    public static String StringBuilder(byte[] bytes, int start){
+    	byte[] subbyte;
+    	String string = "";
+    	boolean condition = true;
+    	do{
+    		subbyte = Arrays.copyOfRange(bytes, start, start+1);
+    		String character = PDU.bytaArrayToString(subbyte, 1);
+    		
+    		if(character.equals("\0")){
+    			condition = false;
+    		} else {
+    			string  += character; 
+    		}
+    		start++;
+    	}while(condition);
+    	
+    	return string;
     }
 }
