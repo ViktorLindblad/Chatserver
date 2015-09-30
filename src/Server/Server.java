@@ -283,10 +283,14 @@ public class Server implements Runnable{
 					}
 					switch(ca) {
 						case(MESS)://MESS
+							System.out.println("-------------------------------------------message received");
 							int nameLength = (int)PDU.byteArrayToLong(buffer, 2, 3);
+							System.out.println(nameLength);
 							int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
+							System.out.println(messageLength);
 							byte[] tempBytes = Arrays.copyOfRange(buffer, 12, 12+messageLength);
 							String message = PDU.bytaArrayToString(tempBytes, messageLength);
+							System.out.println(message);
 							byte[] tempname = Arrays.copyOfRange(buffer, 12+messageLength, 12+messageLength+nameLength);
 
 							String messname = PDU.bytaArrayToString(tempname, nameLength);
@@ -294,6 +298,7 @@ public class Server implements Runnable{
 						
 							MESS mess = new MESS(message, messname, isClient);
 							sendTCPToAll(mess.toByteArray());
+							
 						break;
 						case(QUIT)://QUIT
 							ULEAVE leave = new ULEAVE(messageName);

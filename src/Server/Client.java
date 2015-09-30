@@ -234,6 +234,7 @@ public class Client implements Runnable{
 			return true;
 		} else {
 			checkMessage(buffer);
+			gui.setSocket(socket);
 			return false;
 		}
 		
@@ -315,9 +316,9 @@ public class Client implements Runnable{
 				server = 0;
 			}
 			while(connected){
-				
+				/*
 				boolean isClient = true;
-					
+				
 				if(!gui.getQueue().isEmpty()){
 					System.out.println("sending message");
 					message = gui.getQueue().removeFirst();
@@ -343,7 +344,7 @@ public class Client implements Runnable{
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
-				}
+				}*/
 				receiveTCP();
 				checkMessage(buffer);
 			}

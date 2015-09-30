@@ -3,6 +3,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -14,12 +17,16 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 
+import PDU.CHNICK;
+import PDU.MESS;
+import PDU.QUIT;
+
 
 public class GUI implements ActionListener, Runnable{
 
 	private JPanel panel;
 
-	private boolean updateServers, quitserver;
+	private boolean updateServers, quitserver, running = true;
 	
 	private JButton button;
 	private JButton update;
@@ -33,6 +40,8 @@ public class GUI implements ActionListener, Runnable{
 	private String name = "";
 	private String clientNames = "";
 
+	private Socket socket;
+	private OutputStream outStream;
 	
 	private JFrame frame;
 	
@@ -43,7 +52,7 @@ public class GUI implements ActionListener, Runnable{
 	private JScrollPane clientsScroll;
 	
 	public GUI(){
-		
+		socket = null;
 		updateServers = false;
 		
 		queue = new LinkedList<String> ();
@@ -204,5 +213,52 @@ public class GUI implements ActionListener, Runnable{
 
 	public void run() {
 		
+		while(running){
+			String message = "";
+			
+			if(!getQueue().isEmpty()&&socket!=null){
+				message = getQueue().removeFirst();
+				MESS mess = new MESS(message, name, true);
+				sendTCP(mess.toByteArray());
+			}
+			if(!getNickQueue().isEmpty()&&socket!=null){
+	
+				message = getQueue().removeFirst();
+				CHNICK mess = new CHNICK(message);
+				sendTCP(mess.toByteArray());	
+			}
+			
+			if(getQuit()&&socket!=null) {
+				setQuit(false);
+				
+				QUIT quit = new QUIT();
+				sendTCP(quit.toByteArray());
+				
+				try {
+					socket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}	
+	
+	public synchronized void setSocket(Socket socket){
+		this.socket = socket;
+		try {
+			outStream = socket.getOutputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	private void sendTCP(byte[] bytes) {
+		
+		try {
+			outStream.write(bytes.length);
+			outStream.write(bytes);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
 }

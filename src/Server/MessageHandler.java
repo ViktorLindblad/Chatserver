@@ -22,7 +22,6 @@ public class MessageHandler implements Runnable {
 	}
 
 	public void run() {
-		System.out.println("a message handler is running");
 
 		while(running){
 			
@@ -33,8 +32,8 @@ public class MessageHandler implements Runnable {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			System.out.println("reading messages");
-	       	int length;
+
+			int length;
 			byte [] buffer = null;
 			
 			try {
@@ -45,9 +44,7 @@ public class MessageHandler implements Runnable {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}   
-			
-			System.out.println(buffer.length);
-			
+						
 	        messageQueue.add(buffer); 
 		}
 	}
