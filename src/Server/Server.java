@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import PDU.ALIVE;
+import PDU.MESS;
 import PDU.NICKS;
 import PDU.PDU;
 import PDU.QUIT;
@@ -279,7 +280,17 @@ public class Server implements Runnable{
 					
 					switch(ca) {
 						case(10)://MESS
-							
+							int nameLength = (int)PDU.byteArrayToLong(buffer, 2, 3);
+							int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
+							byte[] tempBytes = Arrays.copyOfRange(buffer, 4, 4+messageLength);
+							String message = PDU.bytaArrayToString(tempBytes, messageLength);
+							byte[] tempname = Arrays.copyOfRange(buffer, 4+messageLength, 4+messageLength+nameLength);
+
+							String messname = PDU.bytaArrayToString(tempname, nameLength);
+							Boolean isClient = false;
+						
+							MESS mess = new MESS(message, messname, isClient);
+							sendTCPToAll(mess.toByteArray());
 						break;
 						case(11)://QUIT
 							ULEAVE leave = new ULEAVE(messageName);
@@ -292,12 +303,12 @@ public class Server implements Runnable{
 								ByteSequenceBuilder BSB = 
 										new ByteSequenceBuilder();
 								
-								byte[] message = 
+								byte[] occupied = 
 										BSB.append(OpCode.NICKO.value)
 										.pad()
 										.toByteArray();
 								
-								answerSocket(temp.getSocket(),message);
+								answerSocket(temp.getSocket(),occupied);
 								
 							} else {
 							
@@ -318,12 +329,12 @@ public class Server implements Runnable{
 								ByteSequenceBuilder BSB = 
 										new ByteSequenceBuilder();
 								
-								byte[] message = 
+								byte[] occupied = 
 										BSB.append(OpCode.NICKO.value)
 										.pad()
 										.toByteArray();
 								
-								answerSocket(temp.getSocket(),message);
+								answerSocket(temp.getSocket(),occupied);
 							
 							} else {
 								UCNICK cnick = new UCNICK(messageName,newName);
@@ -353,11 +364,10 @@ public class Server implements Runnable{
 	}
 
 	private void answerSocket(Socket temp, byte[] bytes) {
-			DataOutputStream DO;
+			OutputStream DO;
 		try {
-			DO = new DataOutputStream(temp.getOutputStream());
+			DO = temp.getOutputStream();
 			DO.write(bytes);
-			DO.flush();
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -376,10 +386,10 @@ public class Server implements Runnable{
 	private void sendTCPToAll(byte[] message) {
 		for(Socket temp : connectedClients){
 			
-			DataOutputStream DO;
+			OutputStream DO;
 			
 			try {
-				DO = new DataOutputStream(temp.getOutputStream());
+				DO = temp.getOutputStream();
 				DO.write(message);
 				DO.flush();
 			} catch (IOException e1) {

@@ -3,6 +3,8 @@ import java.io.*;
 import java.net.Socket;
 import java.util.LinkedList;
 
+import PDU.PDU;
+
 
 public class ServerMessageHandler implements Runnable {
 	
@@ -23,24 +25,31 @@ public class ServerMessageHandler implements Runnable {
 		
 		while(running){
 			System.out.println("a message handler is running");
-			ByteSequenceBuilder BSB = new ByteSequenceBuilder();
+
 			try{
 				inStream = socket.getInputStream();
 				dataInput = new DataInputStream(inStream);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-	       System.out.println("reading messages");
+			System.out.println("reading messages");
+	       	int length;
+			byte [] buffer = null;
+			
 			try {
-				while(dataInput.read() != -1){
-					BSB.append(dataInput.readByte());
-				}
-				System.out.println("message received");
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-		    
-	        messageQueue.add(BSB.toByteArray()); 
+				System.out.println("before");
+				length = dataInput.readInt();
+				System.out.println(length);
+				System.out.println("after");
+				buffer = new byte[length];
+				buffer = PDU.readExactly(inStream, length);
+				System.out.println("Message is read");
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}   
+			System.out.println("Sending message");
+	        messageQueue.add(buffer); 
 		}
 	}
 	

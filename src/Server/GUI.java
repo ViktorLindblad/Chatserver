@@ -159,7 +159,7 @@ public class GUI implements ActionListener{
 	}
 	
 	private void addStringToNickQueue(String text) {
-		
+		nickQueue.add(text);
 	}
 	public synchronized LinkedList<String> getNickQueue(){
 		return nickQueue;
