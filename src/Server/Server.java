@@ -16,7 +16,9 @@ import java.util.Arrays;
 import PDU.ALIVE;
 import PDU.NICKS;
 import PDU.PDU;
+import PDU.QUIT;
 import PDU.REG;
+import PDU.UCNICK;
 import PDU.UJOIN;
 import PDU.ULEAVE;
 
@@ -25,8 +27,8 @@ public class Server implements Runnable{
 	private byte[] buffer,alive;
 	private InetAddress address;
 	private ServerConnector connector;
-	private int serverId;
-	private String serverName;
+	private int serverId, messageIndex;
+	private String serverName, messageName;
 	
 	
 	//sockets
@@ -247,69 +249,121 @@ public class Server implements Runnable{
 
 		hearthBeat();
 
-		while(getRunning()){			
-			
-			if(!connector.getSocketQueue().isEmpty()){
+		while(getRunning()) {			
+			for(String temp : connectedNames) {
+				System.out.println("Connected with nick: "+temp);
+			}
+			if(!connector.getSocketQueue().isEmpty()) {
 				System.out.println("A client connected");
 				Socket socket = connector.getSocketQueue().remove();
 				connectedClients.add(socket);
 				ServerMessageHandler messageHandler = new ServerMessageHandler(socket);
 				SMH.add(messageHandler);
+				System.out.println("Server starts a new thread for a server message handler");
 				new Thread(messageHandler).start();
 			}
-			for(ServerMessageHandler temp : SMH){
+			for(ServerMessageHandler temp : SMH) {
 				
-				if(!temp.getMessageQueue().isEmpty()){
+				if(!temp.getMessageQueue().isEmpty()) {
+					messageIndex = 0;
+					for(Socket socket : connectedClients){
+						messageIndex++;
+						if(socket.equals(temp.getSocket())){
+							messageName = connectedNames.get(messageIndex);
+						}
+					}
 					
 					buffer = temp.getMessageQueue().remove();
 					
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
 					
-					switch(ca){
+					switch(ca) {
 						case(10)://MESS
 							
 						break;
 						case(11)://QUIT
-							ULEAVE leave = new ULEAVE("");
+							ULEAVE leave = new ULEAVE(messageName);
 							sendTCPToAll(leave.toByteArray());
 						break;
 						case(12)://JOIN
-							String name = readJoinMessage(buffer);
-						
-							answerJoin(temp.getSocket());
-						
-							UJOIN join = new UJOIN(name);
-							sendTCPToAll(join.toByteArray());
+							String name = readNameFromMessage(buffer);
+							
+							if(checkNick(name)) {
+								ByteSequenceBuilder BSB = 
+										new ByteSequenceBuilder();
+								
+								byte[] message = 
+										BSB.append(OpCode.NICKO.value)
+										.pad()
+										.toByteArray();
+								
+								answerSocket(temp.getSocket(),message);
+								
+							} else {
+							
+								NICKS nick = 
+										new NICKS(connectedNames);
+								
+								answerSocket(temp.getSocket(),
+										nick.toByteArray());
+							
+								UJOIN join = new UJOIN(name);
+								sendTCPToAll(join.toByteArray());
+							}
 						break;
 						case(13)://CHNICK
+							String newName = readNameFromMessage(buffer);
+							if(checkNick(newName)){
+								
+								ByteSequenceBuilder BSB = 
+										new ByteSequenceBuilder();
+								
+								byte[] message = 
+										BSB.append(OpCode.NICKO.value)
+										.pad()
+										.toByteArray();
+								
+								answerSocket(temp.getSocket(),message);
 							
+							} else {
+								UCNICK cnick = new UCNICK(messageName,newName);
+								sendTCPToAll(cnick.toByteArray());
+								
+								connectedNames.set(messageIndex, newName);
+							}
 						break;
 						default:
-						
+							QUIT quit = new QUIT();
+							answerSocket(temp.getSocket(),quit.toByteArray());
 						break;
 					}
 				}
-				
 			}
-			
-			
-			
 		}
 	}
 	
-	private void answerJoin(Socket temp) {
-		DataOutputStream DO;
-			NICKS nick = new NICKS(connectedNames);
+	private boolean checkNick(String name) {
+		
+		for(String names : connectedNames) {
+			if(names.equals(name)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void answerSocket(Socket temp, byte[] bytes) {
+			DataOutputStream DO;
 		try {
 			DO = new DataOutputStream(temp.getOutputStream());
-			DO.write(nick.toByteArray());
+			DO.write(bytes);
 			DO.flush();
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 	}
 
-	private String readJoinMessage(byte[] bytes) {
+	private String readNameFromMessage(byte[] bytes) {
 		
 		int nameLength = (int)PDU.byteArrayToLong(bytes,1,2);
 		

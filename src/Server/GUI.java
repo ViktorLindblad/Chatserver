@@ -12,12 +12,15 @@ public class GUI implements ActionListener{
 
 	private JPanel panel;
 
-	private boolean updateServers;
+	private boolean updateServers, quitserver;
 	
 	private JButton button;
 	private JButton update;
+	private JButton quit;
+	private JButton changeNick;
 	
 	private LinkedList<String> queue;
+	private LinkedList<String> nickQueue;
 	private String chatString = "";
 	private String name = "";
 	private String clientNames = "";
@@ -30,53 +33,14 @@ public class GUI implements ActionListener{
 	private JTextArea clients;
 	private JScrollPane chatScroll;
 	private JScrollPane clientsScroll;
-
-	
-	public GUI(int width, int height){
-		
-		queue = new LinkedList<String> ();
-		
-		frame = new JFrame("Login");	
-		message = new JTextField();
-		
-		panel = new JPanel();
-		button = new JButton("Login");
-		chatbox = new JTextArea();
-		JLabel label = new JLabel("Username");
-		
-		frame.add(panel);
-		panel.add(button);
-		
-		panel.add(message);
-		panel.add(chatbox);
-		
-		panel.add(label);
-		
-		panel.setLayout(null);
-		button.addActionListener(this);
-		
-		label.setBounds(width/3,height/3 , 64, 32);
-		
-		frame.setSize(width, height);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
-		frame.setResizable(false);
-		frame.setLocationRelativeTo(null);
-		
-		frame.setVisible(true);
-		button.setBounds((width/3),(height/3)*2 , width/3, height/3);
-		
-		chatbox.setBounds(width/3, 0, width/3, height/3);
-		message.setBounds(width/3, height/3+32 , 64, 32);
-		
-		chatbox.setEditable(false);
-	}
 	
 	public GUI(){
 		
 		updateServers = false;
 		
 		queue = new LinkedList<String> ();
+		nickQueue = new LinkedList<String> ();
+
 
 		frame = new JFrame("client");
 		message = new JTextField();
@@ -88,6 +52,9 @@ public class GUI implements ActionListener{
 		button = new JButton("Send message");
 		update = new JButton("Update");
 		
+		quit = new JButton("Quit");
+		changeNick = new JButton("Change nickname");
+		
 		chatScroll = new JScrollPane(chatbox);
 		clientsScroll = new JScrollPane(clients);
 		
@@ -97,6 +64,9 @@ public class GUI implements ActionListener{
 		
 		panel.add(chatScroll);
 		panel.add(clientsScroll);
+		
+		panel.add(quit);
+		panel.add(changeNick);
 		
 		panel.add(clients);
 		panel.add(button);
@@ -122,7 +92,7 @@ public class GUI implements ActionListener{
 		
 		clients.setBounds(450,0,150,200);
 		chatScroll.setBounds(0,0,400,200);
-		chatScroll.scrollRectToVisible(chatbox.getBounds());
+		
 		
 		chatbox.setBackground(Color.MAGENTA);
 		clients.setBackground(Color.magenta);
@@ -131,13 +101,19 @@ public class GUI implements ActionListener{
 		clientsScroll.setBounds(450,0,150,200);
 		
 		clientsScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		button.setBounds(450,250,150,32);
+		button.setBounds(250,290,150,32);
 		
 		update.setBounds(450,210,150,32);
+		
+		quit.setBounds(450, 290, 150, 32);
+		changeNick.setBounds(450, 250, 150, 32);
 		
 		button.addActionListener(this);
 		update.addActionListener(this);
 
+		quit.addActionListener(this);
+		changeNick.addActionListener(this);
+		
 	}
 
 	
@@ -154,6 +130,17 @@ public class GUI implements ActionListener{
 			setUpdate(true);
 		}
 		
+		if(e.getSource() == quit){
+			setQuit(true);
+		}
+		
+		if(e.getSource() == changeNick){
+			if(message.getText() != ""){
+				addStringToNickQueue(message.getText());
+				message.setText("");
+			}
+		}
+		
 		if(e.getSource() == button){
 			if(message.getText() != ""){
 				addStringToQueue(message.getText());
@@ -163,10 +150,28 @@ public class GUI implements ActionListener{
 		
 	}
 	
+	private void addStringToNickQueue(String text) {
+		
+	}
+	public synchronized LinkedList<String> getNickQueue(){
+		return nickQueue;
+	}
+
+
+	public synchronized void setQuit(boolean b) {
+		quitserver = b;
+	}
+	
+	public synchronized boolean getQuit(){
+		return quitserver;
+	}
+
+
 	public void getStringFromClient(String string){
 		if(string != ""){
 			chatString += string + "\n";
 			chatbox.setText(chatString);
+
 		}
 	}
 	

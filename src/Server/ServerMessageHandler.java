@@ -16,13 +16,13 @@ public class ServerMessageHandler implements Runnable {
 		
 		this.socket = socket;
 		messageQueue = new LinkedList <byte[]>();
-		
+		running = true;
 	}
 
-	@Override
 	public void run() {
 		
 		while(running){
+			System.out.println("a message handler is running");
 			ByteSequenceBuilder BSB = new ByteSequenceBuilder();
 			try{
 				inStream = socket.getInputStream();
@@ -30,11 +30,12 @@ public class ServerMessageHandler implements Runnable {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-	       
+	       System.out.println("reading messages");
 			try {
 				while(dataInput.read() != -1){
 					BSB.append(dataInput.readByte());
 				}
+				System.out.println("message received");
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}

@@ -1,13 +1,10 @@
 package Server;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -21,7 +18,9 @@ import java.util.Arrays;
 
 import PDU.GETLIST;
 import PDU.JOIN;
+import PDU.MESS;
 import PDU.PDU;
+import PDU.QUIT;
 
 public class Client implements Runnable{
 	
@@ -32,10 +31,8 @@ public class Client implements Runnable{
 	private ArrayList<Integer> serverPort;
 	private ArrayList<Inet4Address> adresses;
 	private ArrayList<Integer> serverClients;
+	private ArrayList<String> nickNames;
 	
-	
-
-	private Thread thread;
 	private int port, sequenceNumber, servers;
 	private InetAddress address;
 	private GUI gui,login;
@@ -43,8 +40,7 @@ public class Client implements Runnable{
 	private byte[] buffer;
 
 	private boolean running , connected = false;
-	private PrintWriter out;
-	private BufferedReader in;
+	
 	private OutputStream outStream;
 	private InputStream inStream;
 	private DataOutputStream dataOutput;
@@ -80,6 +76,7 @@ public class Client implements Runnable{
 		serverPort = new ArrayList<Integer>();
 		adresses = new ArrayList<Inet4Address>();
 		serverClients = new ArrayList<Integer>();
+		nickNames = new ArrayList<String>();
 		
 		GETLIST getList = new GETLIST();
 		
@@ -157,12 +154,13 @@ public class Client implements Runnable{
 				gui.getStringFromClient("Port: "+serverPort.get(index));
 				gui.getStringFromClient("Clients: "+serverClients.get(index)+"\n");
 				index++;
+				gui.getStringFromClient("Please choose server to start chatting or update: \n");
 			}
 		} else{
 			gui.getStringFromClient("No servers at this time");
 
 		}
-		gui.getStringFromClient("Please choose server to start chatting or update: \n");
+		
 		
 	}
 	
@@ -170,7 +168,19 @@ public class Client implements Runnable{
 	
 	
 	private byte[] receiveTCP() {
-		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
+		int length;
+		byte[] message = null;
+		try {
+			length = dataInput.readInt();
+			message = PDU.readExactly(inStream, length);
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}   
+		return message;
+		
+		
+		/*ByteSequenceBuilder BSB = new ByteSequenceBuilder();
 		try {
 			
 			while(dataInput.read() !=-1){
@@ -181,7 +191,7 @@ public class Client implements Runnable{
 			e.printStackTrace();
 		}
 		
-		return BSB.toByteArray();
+		return BSB.toByteArray();*/
 	}
 	
 	private void sendTCP(byte[] bytes) {
@@ -195,28 +205,43 @@ public class Client implements Runnable{
 		
 	}
 	
-	private void connectToTCP(int port,Inet4Address ip) {
+	private boolean connectToTCP(int port,Inet4Address ip) {
 
 		try{
 			
 			socket = new Socket(ip.getCanonicalHostName(),port);
 			outStream = socket.getOutputStream();
-			out = new PrintWriter(outStream, true);
 			
 			inStream = socket.getInputStream();
-	        in = new BufferedReader(new InputStreamReader(inStream));
+
 			dataInput = new DataInputStream(inStream);
 			dataOutput = new DataOutputStream(outStream);
 			connected = true;
 			
-			JOIN join = new JOIN(name);
+			gui.getStringFromClient("Sending request to join...");
 			
-			sendTCP(join.toByteArray());
 			
+
 		} catch(IOException e){
 			e.printStackTrace();
 		}
 		
+		JOIN join = new JOIN(name);
+		
+		sendTCP(join.toByteArray());
+		
+		buffer = receiveTCP();
+		if(PDU.byteArrayToLong(buffer, 0, 1)==20){
+			gui.getStringFromClient("Nickname occupied! Please try again \n");
+			try {
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	private boolean connect(String ip, int port){
@@ -265,35 +290,59 @@ public class Client implements Runnable{
 	public void run() {
 		String message;
 		int server=0;
+		
+		
 		while(running){
+		
 			if(gui.getUpdate()) {
 				getlist();
 				infoToClient();
 				gui.setUpdate(false);
 			}
-			
+
 			if(!gui.getQueue().isEmpty()) {
 				message = gui.getQueue().removeFirst();
-				server = Integer.parseInt(message);
+				if(message != ""){
+					server = Integer.parseInt(message);
+				}
 			}
-			
 			if(server != 0 && server <= serverNames.size() ) {
+				do {
+					chooseNickName();
 				
-				gui.getStringFromClient("Chose your nickname!");
+					gui.getStringFromClient("Your nickname is: "+name);
 				
-				boolean choosen = false;
-				do{
-					if(!gui.getQueue().isEmpty()){
-						name = gui.getQueue().removeFirst();
-						choosen = true;
-					}
-				}while(!choosen);
+				} while(connectToTCP(serverPort.get(server-1),
+								adresses.get(server-1)));
 				
-				connectToTCP(serverPort.get(server-1),adresses.get(server-1));
-				receiveTCP();
+				System.out.println("receiving message");
+				buffer = receiveTCP();
+				System.out.println("received message");
+				gui.getStringFromClient(String.valueOf(PDU.byteArrayToLong(buffer, 0, 1)));
+				
 				server = 0;
 			}
-			while(connected){
+			while(connected){			
+				boolean isClient = true;
+				if(!gui.getQueue().isEmpty()){
+					
+					if(gui.getQuit()) {
+						gui.setQuit(false);
+						
+						QUIT quit = new QUIT();
+						sendTCP(quit.toByteArray());
+						
+						try {
+							socket.close();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+					
+					message=gui.getQueue().removeFirst();
+					MESS mess = new MESS(message, name, isClient);
+					sendTCP(mess.toByteArray());	
+				}
 				
 			}
 		}
@@ -326,6 +375,18 @@ public class Client implements Runnable{
 	        */
 	        
 		
+	}
+	
+	private void chooseNickName(){
+		gui.getStringFromClient("Chose your nickname!");
+		
+		boolean choosen = false;
+		do{
+			if(!gui.getQueue().isEmpty()){
+				name = gui.getQueue().removeFirst();
+				choosen = true;
+			}
+		}while(!choosen);
 	}
 	
 	@SuppressWarnings("unused")

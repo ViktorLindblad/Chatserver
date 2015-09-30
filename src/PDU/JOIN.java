@@ -13,7 +13,8 @@ public class JOIN extends PDU {
 		byte length = ((byte)nickname
 				.getBytes(StandardCharsets.UTF_8).length);
 		
-		bytes = new ByteSequenceBuilder(OpCode.JOIN.value, length).pad()
+		bytes = new ByteSequenceBuilder(OpCode.JOIN.value)
+				.append(length).pad()
 				.append(nickBytes).pad().toByteArray();			
 	
 	}

@@ -46,7 +46,8 @@ public class MESS extends PDU{
 					.appendShort(lengthMessage).pad()
 					.appendInt((int)time)
 					.append(messageBytes).pad()
-					.append(name.getBytes()).pad().toByteArray();
+					.append(name.getBytes(StandardCharsets.UTF_8))
+					.pad().toByteArray();
 			
 			checksum.update(bytes, 0, bytes.length);
 			bytes = null;
@@ -57,7 +58,8 @@ public class MESS extends PDU{
 					.appendShort(lengthMessage).pad()
 					.appendInt((int)time)
 					.append(messageBytes).pad()
-					.append(name.getBytes()).pad().toByteArray();
+					.append(name.getBytes(StandardCharsets.UTF_8))
+					.pad().toByteArray();
 		}	
 	}
 	
