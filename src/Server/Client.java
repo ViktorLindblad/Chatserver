@@ -402,9 +402,16 @@ public class Client implements Runnable{
 				tempbytes = Arrays.copyOfRange(bytes,8,8+length);
 				
 				name = PDU.bytaArrayToString(tempbytes, length);
-				
-				nickNames.add(name);
-				gui.getNameFromClient(nickNames);
+				boolean don = true;
+				for(String temp : nickNames){
+					if(temp.equals(name)){
+						don = false;
+					}
+				}
+				if(don){
+					nickNames.add(name);
+					gui.getNameFromClient(nickNames);
+				}
 				
 			break;
 			
@@ -465,9 +472,20 @@ public class Client implements Runnable{
 						
 						index++;
 					}while(condition);
-					nickNames.add(name);
+					
+					boolean dont = true;
+					
+					for(String temp : nickNames){
+						
+						if(name.equals(temp)){
+							dont = false;
+						}
+					}
+					if(dont){
+						nickNames.add(name);
+					}
 				}
-				System.out.println(nickNames.size());
+
 				gui.getNameFromClient(nickNames);
 
 			break;

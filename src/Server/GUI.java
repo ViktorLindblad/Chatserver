@@ -184,11 +184,12 @@ public class GUI implements ActionListener{
 	}
 	
 	public void getNameFromClient(ArrayList<String> nickNames){
-		
+		clientNames = "";
+		clients.setText("");
 		for(String temp : nickNames) {
 			clientNames += temp + "\n";
 		}
-		clients.replaceSelection(clientNames);
+		clients.setText(clientNames);
 		
 	}
 	
