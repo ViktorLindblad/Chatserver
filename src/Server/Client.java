@@ -176,13 +176,14 @@ public class Client implements Runnable{
 		int length;
 		buffer = null;
 		try {
-			gui.getStringFromClient("Waiting for server to answer");
 			System.out.println("before");
 			length =(int) dataInput.readByte();
 			System.out.println("after");
+			System.out.println();
 			buffer = new byte[length];
 			buffer = PDU.readExactly(inStream, length);
 			gui.getStringFromClient("Message received");
+			System.out.println(PDU.byteArrayToLong(buffer, 0, 1));
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -206,7 +207,6 @@ public class Client implements Runnable{
 	private void sendTCP(byte[] bytes) {
 		
 		try {
-			System.out.println(bytes.length);
 			outStream.write(bytes.length);
 			outStream.write(bytes);
 		} catch (IOException e) {
@@ -237,12 +237,9 @@ public class Client implements Runnable{
 		}
 		
 		JOIN join = new JOIN(name);
-		System.out.println(name);
 		
-		System.out.println(join.toByteArray().length);
 		
 		sendTCP(join.toByteArray());
-		System.out.println(gui.getQueue().size());
 		receiveTCP();
 		if(PDU.byteArrayToLong(buffer, 0, 1)==20){
 			try {
@@ -458,15 +455,19 @@ public class Client implements Runnable{
 					do{
 						byte[] tempbyte = Arrays.copyOfRange(bytes, index, index+1);
 						String character = PDU.bytaArrayToString(tempbyte, 1);
-						if(Integer.valueOf(character)==0){
+						System.out.println(character);
+						
+						if(character.equals("\0")){
 							condition = false;
 						} else {
 							name += character;
 						}
+						
 						index++;
 					}while(condition);
 					nickNames.add(name);
 				}
+				System.out.println(nickNames.size());
 				gui.getNameFromClient(nickNames);
 
 			break;
@@ -479,6 +480,19 @@ public class Client implements Runnable{
 			break;
 		}
 	}
+	
+	public boolean isNumber(Object o){
+	        boolean isNumber = true;
+
+	        for( byte b : o.toString().getBytes() ){
+	            char c = (char)b;
+	            if(!Character.isDigit(c)) {
+	                isNumber = false;
+	            }
+	        }
+
+	        return isNumber;
+	   }
 	
 	private void chooseNickName(){
 		gui.getStringFromClient("Chose your nickname!");
@@ -494,7 +508,6 @@ public class Client implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		
 		Client client = new Client(1337,"itchy.cs.umu.se");
 	}
 
