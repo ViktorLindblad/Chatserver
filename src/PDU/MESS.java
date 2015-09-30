@@ -8,19 +8,18 @@ import Server.OpCode;
 
 public class MESS extends PDU{
 
-	private Checksum checksum;
 	
 	public MESS(String message, String name, boolean isClient) {
 		
 		long time = System.currentTimeMillis() / 1000L;
-		
+		int checksum;
 		byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
 		byte lengthMessage = ((byte)message.getBytes
 									(StandardCharsets.UTF_8).length);
 		
 		if(isClient){
 			byte length = 0; 
-			
+			time = 0;
 			
 			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).pad()
 					.append(length)
@@ -28,12 +27,12 @@ public class MESS extends PDU{
 					.appendInt((int)time)
 					.append(messageBytes).pad().toByteArray();
 			
-			checksum.update(bytes, 0, bytes.length);
+			checksum = bytes.length - 255;
 			bytes = null;
 			
 			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).pad()
 					.append(length)
-					.append((byte)checksum.getValue())
+					.append((byte)checksum)
 					.appendShort(lengthMessage).pad()
 					.appendInt((int)time)
 					.append(messageBytes).pad().toByteArray();
@@ -49,12 +48,12 @@ public class MESS extends PDU{
 					.append(name.getBytes(StandardCharsets.UTF_8))
 					.pad().toByteArray();
 			
-			checksum.update(bytes, 0, bytes.length);
+			checksum = bytes.length - 255;
 			bytes = null;
 			
 			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).pad()
 					.append(length)
-					.append((byte)checksum.getValue())
+					.append((byte)checksum)
 					.appendShort(lengthMessage).pad()
 					.appendInt((int)time)
 					.append(messageBytes).pad()

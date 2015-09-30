@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import PDU.PDU;
 
 
-public class ServerMessageHandler implements Runnable {
+public class MessageHandler implements Runnable {
 	
 	private LinkedList <byte[]> messageQueue; 
 	private Socket socket;
@@ -14,7 +14,7 @@ public class ServerMessageHandler implements Runnable {
 	private DataInputStream dataInput;
 	private boolean running;
 	
-	public ServerMessageHandler(Socket socket){
+	public MessageHandler(Socket socket){
 		
 		this.socket = socket;
 		messageQueue = new LinkedList <byte[]>();
@@ -22,10 +22,11 @@ public class ServerMessageHandler implements Runnable {
 	}
 
 	public void run() {
-		
-		while(running){
-			System.out.println("a message handler is running");
+		System.out.println("a message handler is running");
 
+		while(running){
+			
+			
 			try{
 				inStream = socket.getInputStream();
 				dataInput = new DataInputStream(inStream);
@@ -44,6 +45,9 @@ public class ServerMessageHandler implements Runnable {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}   
+			
+			System.out.println(buffer.length);
+			
 	        messageQueue.add(buffer); 
 		}
 	}

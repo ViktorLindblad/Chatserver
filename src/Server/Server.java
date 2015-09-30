@@ -44,7 +44,7 @@ public class Server implements Runnable{
 	//Lists
 	private ArrayList<String> connectedNames;
 	private ArrayList<Socket> connectedClients;
-	private ArrayList<ServerMessageHandler> SMH;
+	private ArrayList<MessageHandler> SMH;
 	//input & output
     private OutputStream outStream;
     private InputStream inStream;
@@ -60,7 +60,7 @@ public class Server implements Runnable{
 		
 		connectedNames = new ArrayList<String>();
 		connectedClients = new ArrayList<Socket> ();
-		SMH = new ArrayList<ServerMessageHandler> ();
+		SMH = new ArrayList<MessageHandler> ();
 		buffer = new byte[256];
 		alive = new byte[256];
 		
@@ -257,13 +257,13 @@ public class Server implements Runnable{
 				System.out.println("adding client to list");
 				connectedClients.add(socket);
 				System.out.println(connectedClients.size());
-				ServerMessageHandler messageHandler = new ServerMessageHandler(socket);
+				MessageHandler messageHandler = new MessageHandler(socket);
 				SMH.add(messageHandler);
 				System.out.println("Server starts a new thread for a server message handler");
 				new Thread(messageHandler).start();
 			}
 			
-			for(ServerMessageHandler temp : SMH) {
+			for(MessageHandler temp : SMH) {
 				
 				if(!temp.getMessageQueue().isEmpty()) {
 					
@@ -285,9 +285,9 @@ public class Server implements Runnable{
 						case(MESS)://MESS
 							int nameLength = (int)PDU.byteArrayToLong(buffer, 2, 3);
 							int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
-							byte[] tempBytes = Arrays.copyOfRange(buffer, 4, 4+messageLength);
+							byte[] tempBytes = Arrays.copyOfRange(buffer, 12, 12+messageLength);
 							String message = PDU.bytaArrayToString(tempBytes, messageLength);
-							byte[] tempname = Arrays.copyOfRange(buffer, 4+messageLength, 4+messageLength+nameLength);
+							byte[] tempname = Arrays.copyOfRange(buffer, 12+messageLength, 12+messageLength+nameLength);
 
 							String messname = PDU.bytaArrayToString(tempname, nameLength);
 							Boolean isClient = false;

@@ -15,7 +15,7 @@ import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 
 
-public class GUI implements ActionListener{
+public class GUI implements ActionListener, Runnable{
 
 	private JPanel panel;
 
@@ -129,7 +129,7 @@ public class GUI implements ActionListener{
 		return queue;
 	}
 	
-	public void addStringToQueue(String string){
+	private void addStringToQueue(String string){
 		queue.add(string);
 	}
 
@@ -175,7 +175,7 @@ public class GUI implements ActionListener{
 	}
 
 
-	public void getStringFromClient(String string){
+	public synchronized void getStringFromClient(String string){
 		if(string != ""){
 			chatString += string + "\n";
 			chatbox.setText(chatString);
@@ -183,7 +183,7 @@ public class GUI implements ActionListener{
 		}
 	}
 	
-	public void getNameFromClient(ArrayList<String> nickNames){
+	public synchronized void getNameFromClient(ArrayList<String> nickNames){
 		clientNames = "";
 		clients.setText("");
 		for(String temp : nickNames) {
@@ -193,15 +193,16 @@ public class GUI implements ActionListener{
 		
 	}
 	
-	public String getName(){
-		return name;
-	}
-	
 	public synchronized void setUpdate(boolean condition){
 		updateServers = condition;
 	}
 	
 	public synchronized boolean getUpdate(){
 		return updateServers;
+	}
+
+
+	public void run() {
+		
 	}	
 }

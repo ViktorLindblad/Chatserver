@@ -57,7 +57,7 @@ public class Client implements Runnable{
 		this.port = port;
 		buffer = new byte[256];
 		gui = new GUI();
-		
+		new Thread(gui).start();
 		servers = 0;		
 		
 		if(!connect(ip,port)){
@@ -175,33 +175,16 @@ public class Client implements Runnable{
 	private void receiveTCP() {
 		int length;
 		buffer = null;
+		
 		try {
-			System.out.println("before");
 			length =(int) dataInput.readByte();
-			System.out.println("after");
-			System.out.println();
 			buffer = new byte[length];
 			buffer = PDU.readExactly(inStream, length);
-			gui.getStringFromClient("Message received");
-			System.out.println(PDU.byteArrayToLong(buffer, 0, 1));
+			gui.getStringFromClient(String.valueOf(PDU.byteArrayToLong(buffer, 0, 1)));
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}   
-		
-		
-		/*ByteSequenceBuilder BSB = new ByteSequenceBuilder();
-		try {
-			
-			while(dataInput.read() !=-1){
-				BSB.append((byte)dataInput.read());
-			}
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return BSB.toByteArray();*/
 	}
 	
 	private void sendTCP(byte[] bytes) {
@@ -240,6 +223,7 @@ public class Client implements Runnable{
 		
 		
 		sendTCP(join.toByteArray());
+
 		receiveTCP();
 		if(PDU.byteArrayToLong(buffer, 0, 1)==20){
 			try {
@@ -252,6 +236,7 @@ public class Client implements Runnable{
 			checkMessage(buffer);
 			return false;
 		}
+		
 	}
 
 	private boolean connect(String ip, int port){
@@ -300,7 +285,7 @@ public class Client implements Runnable{
 	public void run() {
 		String message;
 		int server=0;
-		
+
 		
 		while(running){
 		
@@ -329,11 +314,12 @@ public class Client implements Runnable{
 				
 				server = 0;
 			}
-			while(connected){			
+			while(connected){
+				
 				boolean isClient = true;
 					
 				if(!gui.getQueue().isEmpty()){
-
+					System.out.println("sending message");
 					message = gui.getQueue().removeFirst();
 					MESS mess = new MESS(message, name, isClient);
 					sendTCP(mess.toByteArray());	
@@ -362,39 +348,37 @@ public class Client implements Runnable{
 				checkMessage(buffer);
 			}
 		}
-			/*
-	        if(!gui.getQueue().isEmpty()){
-				out.println(gui.getQueue().remove());
-		        out.flush();
-			} else {
-				out.println("");
-				out.flush();
-			}
-
-	        try{
-	        	if((receiveMessage = in.readLine()) != null){
-	        	}
-	        } catch (IOException e){
-	        	e.printStackTrace();
-	        }
-	        
-	        if(receiveMessage.length() > 0){
-        		gui.getStringFromClient(receiveMessage);
-	        }
-	        */
 	}
 	
 	private void checkMessage(byte[] bytes){
 		int ca = (int)PDU.byteArrayToLong(bytes, 0, 1);
 		int length;
+		int time;
 		byte[] tempbytes;
 		String name = "";
 		
 		switch(ca){
 			case(MESS):
+				int nameLength = (int)PDU.byteArrayToLong(buffer, 2, 3);
+				int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
+				time = (int)PDU.byteArrayToLong(buffer, 8, 12);
+				byte[] tempBytes = Arrays.copyOfRange(buffer,12, 12+messageLength);
+				String message = PDU.bytaArrayToString(tempBytes, messageLength);
+				byte[] tempname = Arrays.copyOfRange(buffer, 12+messageLength, 12+messageLength+nameLength);
+
+				String messname = PDU.bytaArrayToString(tempname, nameLength);
+				
+				String mess = messname+ "said: "+message+"At timestamp:"+String.valueOf(time);
+				gui.getStringFromClient(mess);
 			break;
 			
 			case(QUIT):
+				gui.getStringFromClient("Server shutdown!");
+				try {
+					socket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			break;
 			
 			case(UJOIN):
@@ -432,7 +416,7 @@ public class Client implements Runnable{
 			case(UCNICK):
 				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
 				int secondLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
-				int time = (int)PDU.byteArrayToLong(bytes, 4, 8);
+				time = (int)PDU.byteArrayToLong(bytes, 4, 8);
 				tempbytes = Arrays.copyOfRange(bytes,8,8+length);
 				name = PDU.bytaArrayToString(tempbytes, length);
 				
