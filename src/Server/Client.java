@@ -178,7 +178,7 @@ public class Client implements Runnable{
 		try {
 			gui.getStringFromClient("Waiting for server to answer");
 			System.out.println("before");
-			length = dataInput.readInt();
+			length =(int) dataInput.readByte();
 			System.out.println("after");
 			buffer = new byte[length];
 			buffer = PDU.readExactly(inStream, length);
@@ -206,6 +206,7 @@ public class Client implements Runnable{
 	private void sendTCP(byte[] bytes) {
 		
 		try {
+			System.out.println(bytes.length);
 			outStream.write(bytes.length);
 			outStream.write(bytes);
 		} catch (IOException e) {
@@ -236,9 +237,12 @@ public class Client implements Runnable{
 		}
 		
 		JOIN join = new JOIN(name);
+		System.out.println(name);
+		
+		System.out.println(join.toByteArray().length);
 		
 		sendTCP(join.toByteArray());
-		
+		System.out.println(gui.getQueue().size());
 		receiveTCP();
 		if(PDU.byteArrayToLong(buffer, 0, 1)==20){
 			try {

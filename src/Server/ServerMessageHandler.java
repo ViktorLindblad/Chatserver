@@ -37,18 +37,13 @@ public class ServerMessageHandler implements Runnable {
 			byte [] buffer = null;
 			
 			try {
-				System.out.println("before");
-				length = dataInput.readInt();
-				System.out.println(length);
-				System.out.println("after");
+				length = dataInput.readByte();
 				buffer = new byte[length];
 				buffer = PDU.readExactly(inStream, length);
-				System.out.println("Message is read");
 				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}   
-			System.out.println("Sending message");
 	        messageQueue.add(buffer); 
 		}
 	}

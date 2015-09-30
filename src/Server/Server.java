@@ -25,12 +25,13 @@ import PDU.ULEAVE;
 
 public class Server implements Runnable{
 	
+	private static final int MESS = 10, QUIT = 11, JOIN = 12, CHNICK = 13;
+	
 	private byte[] buffer,alive;
 	private InetAddress address;
 	private ServerConnector connector;
 	private int serverId, messageIndex;
 	private String serverName, messageName;
-	
 	
 	//sockets
 	private DatagramSocket datagramSocket;
@@ -246,40 +247,42 @@ public class Server implements Runnable{
 	
 	public void run() {
 
-		String inputLine = "";
+		hearthBeat();// Starting new thread
 
-		hearthBeat();
-
-		while(getRunning()) {			
-			for(String temp : connectedNames) {
-				System.out.println("Connected with nick: "+temp);
-			}
+		while(getRunning()) {
+			
 			if(!connector.getSocketQueue().isEmpty()) {
 				System.out.println("A client connected");
 				Socket socket = connector.getSocketQueue().remove();
+				System.out.println("adding client to list");
 				connectedClients.add(socket);
+				System.out.println(connectedClients.size());
 				ServerMessageHandler messageHandler = new ServerMessageHandler(socket);
 				SMH.add(messageHandler);
 				System.out.println("Server starts a new thread for a server message handler");
 				new Thread(messageHandler).start();
 			}
+			
 			for(ServerMessageHandler temp : SMH) {
 				
 				if(!temp.getMessageQueue().isEmpty()) {
-					messageIndex = 0;
-					for(Socket socket : connectedClients){
-						messageIndex++;
-						if(socket.equals(temp.getSocket())){
-							messageName = connectedNames.get(messageIndex);
-						}
-					}
+					
 					
 					buffer = temp.getMessageQueue().remove();
 					
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
-					
+					if(ca!=12){
+						messageIndex = 0;
+						for(Socket socket : connectedClients){
+							
+							if(socket.equals(temp.getSocket())){
+								messageName = connectedNames.get(messageIndex);
+							}
+							messageIndex++;
+						}
+					}
 					switch(ca) {
-						case(10)://MESS
+						case(MESS)://MESS
 							int nameLength = (int)PDU.byteArrayToLong(buffer, 2, 3);
 							int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
 							byte[] tempBytes = Arrays.copyOfRange(buffer, 4, 4+messageLength);
@@ -292,11 +295,11 @@ public class Server implements Runnable{
 							MESS mess = new MESS(message, messname, isClient);
 							sendTCPToAll(mess.toByteArray());
 						break;
-						case(11)://QUIT
+						case(QUIT)://QUIT
 							ULEAVE leave = new ULEAVE(messageName);
 							sendTCPToAll(leave.toByteArray());
 						break;
-						case(12)://JOIN
+						case(JOIN)://JOIN
 							String name = readNameFromMessage(buffer);
 							
 							if(checkNick(name)) {
@@ -311,7 +314,7 @@ public class Server implements Runnable{
 								answerSocket(temp.getSocket(),occupied);
 								
 							} else {
-							
+								connectedNames.add(name);
 								NICKS nick = 
 										new NICKS(connectedNames);
 								
@@ -322,7 +325,7 @@ public class Server implements Runnable{
 								sendTCPToAll(join.toByteArray());
 							}
 						break;
-						case(13)://CHNICK
+						case(CHNICK)://CHNICK
 							String newName = readNameFromMessage(buffer);
 							if(checkNick(newName)){
 								
@@ -367,6 +370,7 @@ public class Server implements Runnable{
 			OutputStream DO;
 		try {
 			DO = temp.getOutputStream();
+			DO.write(bytes.length);
 			DO.write(bytes);
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -390,8 +394,9 @@ public class Server implements Runnable{
 			
 			try {
 				DO = temp.getOutputStream();
+
+				DO.write(message.length);
 				DO.write(message);
-				DO.flush();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}

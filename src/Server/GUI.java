@@ -202,6 +202,5 @@ public class GUI implements ActionListener{
 	
 	public synchronized boolean getUpdate(){
 		return updateServers;
-	}
-	
+	}	
 }
