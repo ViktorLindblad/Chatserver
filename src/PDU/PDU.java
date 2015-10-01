@@ -117,7 +117,7 @@ public abstract class PDU {
          return string;
     }
     
-    public static String StringBuilder(byte[] bytes, int start){
+    public static String stringReader(byte[] bytes, int start){
     	byte[] subbyte;
     	String string = "";
     	boolean condition = true;

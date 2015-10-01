@@ -287,7 +287,7 @@ public class Server implements Runnable{
 							int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
 							System.out.println("L"+messageLength);
 							
-							String message = PDU.StringBuilder(buffer, 8);
+							String message = PDU.stringReader(buffer, 8);
 
 							System.out.println("m "+message);
 							System.out.println("Namn "+messageName);

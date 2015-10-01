@@ -366,10 +366,10 @@ public class Client implements Runnable{
 				System.out.println("messageLength: "+messageLength);
 				time = (int)PDU.byteArrayToLong(bytes, 8, 12);
 				
-				String message = PDU.StringBuilder(bytes, 12);
+				String message = PDU.stringReader(bytes, 12);
 				System.out.println("received message : "+message);
 				
-				String messname = PDU.StringBuilder(bytes, 12+messageLength);
+				String messname = PDU.stringReader(bytes, 12+messageLength);
 				
 				String mess = messname+ "said: "+message+" At timestamp:"+String.valueOf(time);
 				
