@@ -1,8 +1,6 @@
 package PDU;
 
 import java.nio.charset.StandardCharsets;
-import java.util.zip.Checksum;
-
 import Server.ByteSequenceBuilder;
 import Server.OpCode;
 
@@ -17,7 +15,7 @@ public class MESS extends PDU{
 		int lengthMessage = message.getBytes
 									(StandardCharsets.UTF_8).length;
 		if(isClient){
-			int length = 0; 
+
 			time = 0;
 			
 			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).padshort()
@@ -33,8 +31,6 @@ public class MESS extends PDU{
 					.append((byte)checksum)
 					.appendShort((short)lengthMessage).pad()
 					.append(messageBytes).pad().toByteArray();
-			System.out.println("bytes: "+bytes.length);
-			System.out.println(messageBytes.length);
 		} else {
 			int length = name.getBytes().length;
 
@@ -59,9 +55,6 @@ public class MESS extends PDU{
 					.append(messageBytes).pad()
 					.append(name.getBytes(StandardCharsets.UTF_8))
 					.pad().toByteArray();
-			System.out.println("bytes: "+bytes.length);
-			System.out.println(name.getBytes(StandardCharsets.UTF_8).length);
-			System.out.println(messageBytes.length);
 
 		}	
 	}

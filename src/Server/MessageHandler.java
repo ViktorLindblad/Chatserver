@@ -14,9 +14,10 @@ public class MessageHandler implements Runnable {
 	private DataInputStream dataInput;
 	private boolean running;
 	private Thread thread;
+	private boolean correct;
 	
 	public MessageHandler(Socket socket){
-		
+		correct = true;
 		this.socket = socket;
 		messageQueue = new LinkedList <byte[]>();
 		running = true;
@@ -27,29 +28,11 @@ public class MessageHandler implements Runnable {
 	public void run() {
 
 		while(running){
-			
-			
-			try{
-				inStream = socket.getInputStream();
-				dataInput = new DataInputStream(inStream);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-			int length;
-			byte [] buffer = null;
-			
-			try {
-				length = dataInput.readByte();
-				buffer = new byte[length];
-				buffer = PDU.readExactly(inStream, length);
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-			} finally {
-		        if (PDU.byteArrayToLong(buffer, 0, 1)==11) {
-		        	System.out.println("Client wants to quit");
-		            try {
+			synchronized(this){
+				if(!receivedCorrectMessage()){
+					
+	
+		        	try {
 		                dataInput.close();
 		            } catch (IOException e) {
 		            	e.printStackTrace();
@@ -64,17 +47,53 @@ public class MessageHandler implements Runnable {
 		    		} catch (IOException e) {
 		    			e.printStackTrace();
 		    		}
-		    		messageQueue.add(buffer);
 		    		try {
 						thread.join();
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
 		        }
-		    } 
-						
-	        messageQueue.add(buffer); 
+			
+				
+				try{
+					inStream = socket.getInputStream();
+					dataInput = new DataInputStream(inStream);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+		
+				int length;
+				byte [] buffer = null;
+				
+				try {
+					length = dataInput.readByte();
+					buffer = new byte[length];
+					buffer = PDU.readExactly(inStream, length);
+					
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+								     
+				messageQueue.add(buffer);
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
+	}
+	
+	public synchronized void notifyThread(){
+		thread.notify();
+	}
+	
+	private synchronized boolean receivedCorrectMessage() {
+		return correct;
+	}
+	
+	public synchronized void setReceivedCorrectMessage(boolean condition) {
+		correct  = condition;
 	}
 	
 	public synchronized void setMessageRunning(boolean bool){

@@ -3,7 +3,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 /**
@@ -113,23 +112,24 @@ public abstract class PDU {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-    	 System.out.println("String is:");
          return string;
     }
     
-    public static String stringReader(byte[] bytes, int start){
+    public static String stringReader(byte[] bytes, int start, int stop){
     	byte[] subbyte;
     	String string = "";
     	boolean condition = true;
+    	int index = 0;
     	do{
     		subbyte = Arrays.copyOfRange(bytes, start, start+1);
     		String character = PDU.bytaArrayToString(subbyte, 1);
     		
-    		if(character.equals("\0")){
+    		if(character.equals("\0")||index == stop){
     			condition = false;
     		} else {
     			string  += character; 
     		}
+    		index++;
     		start++;
     	}while(condition);
     	

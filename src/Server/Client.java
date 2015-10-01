@@ -214,6 +214,8 @@ public class Client implements Runnable{
 		
 		JOIN join = new JOIN(name);
 		
+		System.out.println("name "+name);
+		
 		
 		sendTCP(join.toByteArray());
 
@@ -328,10 +330,10 @@ public class Client implements Runnable{
 				length = (int)PDU.byteArrayToLong(bytes, 4, 6);
 
 				time = (int)PDU.byteArrayToLong(bytes, 8, 12);
-				String message = PDU.stringReader(bytes, 12);
+				String message = PDU.stringReader(bytes, 12,length);
 				
 				length += 4 - ( length % 4);
-				String messname = PDU.stringReader(bytes, 12+length);
+				String messname = PDU.stringReader(bytes, 12+length,nameLength);
 				
 				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");    
 				Date resultdate = new Date(time);
@@ -347,11 +349,12 @@ public class Client implements Runnable{
 			break;
 			
 			case(UJOIN):
+				
 				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
 				time = (int) PDU.byteArrayToLong(bytes, 4, 8);
-				tempbytes = Arrays.copyOfRange(bytes,8,8+length);
 				
-				name = PDU.bytaArrayToString(tempbytes, length);
+				name = PDU.stringReader(bytes, 8, length);
+				
 				boolean don = true;
 				for(String temp : nickNames){
 					if(temp.equals(name)){
@@ -362,15 +365,16 @@ public class Client implements Runnable{
 					nickNames.add(name);
 					gui.getNameFromClient(nickNames);
 				}
+				
+				
 				gui.getStringFromClient(name+" Joined chatroom at: " +time);
 				
 			break;
 			
 			case(ULEAVE):
 				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
-				tempbytes = Arrays.copyOfRange(bytes,8,8+length);
 			
-				name = PDU.bytaArrayToString(tempbytes, length);
+				name = PDU.stringReader(bytes, 8, length);
 			
 				for(int i = 0; i < nickNames.size(); i++ ){
 					if(nickNames.get(i).equals(name)){
@@ -386,11 +390,11 @@ public class Client implements Runnable{
 				int secondLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
 				time = (int)PDU.byteArrayToLong(bytes, 4, 8);
 				
-				name = PDU.stringReader(bytes, 8);
+				name = PDU.stringReader(bytes, 8, length);
 				
 				length += 4 - (length % 4);
 				
-				String name2 = PDU.stringReader(bytes, 8+length);
+				String name2 = PDU.stringReader(bytes, 8+length, secondLength);
 
 		
 			for(int i = 0; i < nickNames.size(); i++ ){
@@ -409,13 +413,12 @@ public class Client implements Runnable{
 				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
 				int index = 4;
 				boolean condition;
-				
+				System.out.println("NICKS " +length);
 				for(int i = 0; i < length; i++){
 					condition = true;
 					do{
 						byte[] tempbyte = Arrays.copyOfRange(bytes, index, index+1);
 						String character = PDU.bytaArrayToString(tempbyte, 1);
-						System.out.println(character);
 						
 						if(character.equals("\0")){
 							condition = false;
@@ -434,6 +437,7 @@ public class Client implements Runnable{
 							dont = false;
 						}
 					}
+
 					if(dont){
 						nickNames.add(name);
 					}

@@ -278,6 +278,7 @@ public class GUI implements ActionListener, Runnable{
 	
 				message = getNickQueue().removeFirst();
 				CHNICK mess = new CHNICK(message);
+				System.out.println("chnick "+message);
 				sendTCP(mess.toByteArray());	
 			}
 			
