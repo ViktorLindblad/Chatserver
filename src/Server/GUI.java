@@ -27,7 +27,7 @@ public class GUI implements ActionListener, Runnable{
 	private JPanel panel;
 
 	private boolean connected, updateServers, quitserver, running = true,
-					clientconnect = true;
+					clientconnect = true , receive = false;
 	
 	private JButton button;
 	private JButton connect;
@@ -46,6 +46,8 @@ public class GUI implements ActionListener, Runnable{
 	private OutputStream outStream;
 	
 	private JFrame frame;
+	
+	private int i=1337;
 	
 	private JTextArea chatbox;
 	private JTextField message;
@@ -160,10 +162,12 @@ public class GUI implements ActionListener, Runnable{
 		if(e.getSource() == connect){
 			
 			if(clientconnect){
-				Client client = new  Client(1337,"itchy.cs.umu.se",this);
+				
+				Client client = new  Client(i,"itchy.cs.umu.se",this);
 				clientThread = new Thread(client);
 				clientThread.start();
 				clientconnect = false;
+				i++;
 			}
 			
 		}
@@ -175,12 +179,15 @@ public class GUI implements ActionListener, Runnable{
 		if(e.getSource() == quit){
 			setQuit(true);
 			clientconnect = true;
+			connected = false;
+			clientThread = null;
 		}
 		
 		if(e.getSource() == changeNick){
 			if(message.getText() != ""){
 				addStringToNickQueue(message.getText());
 				message.setText("");
+				receive = true;
 			}
 		}
 		
@@ -188,6 +195,7 @@ public class GUI implements ActionListener, Runnable{
 			if(message.getText() != ""){
 				addStringToQueue(message.getText());
 				message.setText("");
+				receive = true;
 			}
 		}
 		
@@ -261,13 +269,7 @@ public class GUI implements ActionListener, Runnable{
 				QUIT quit = new QUIT();
 				sendTCP(quit.toByteArray());
 				connected = false;
-				if(clientThread != null) {
-					try {
-						clientThread.wait();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
+
 			}
 		}
 	}	
@@ -298,5 +300,14 @@ public class GUI implements ActionListener, Runnable{
 	
 	public synchronized void setConnected(boolean condition){
 		connected = condition;
+	}
+
+
+	public synchronized boolean getReceive() {
+		return receive;
+	}
+	
+	public synchronized void setReceive(boolean condition){
+		receive = condition;
 	}
 }

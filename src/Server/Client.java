@@ -52,7 +52,6 @@ public class Client implements Runnable{
 	
 	public Client(int port,  String ip,GUI gui) {
 
-		//login = new GUI(360,360);
 		this.port = port;
 		buffer = new byte[256];
 		this.gui = gui;
@@ -309,10 +308,12 @@ public class Client implements Runnable{
 				
 				server = 0;
 			}
-			while(gui.getConnected()){
-
-				receiveTCP();
-				checkMessage(buffer);
+			while(gui.getConnected()) {
+				if(gui.getReceive()) {
+					receiveTCP();
+					checkMessage(buffer);
+					gui.setReceive(false);
+				}
 			}
 		}
 	}
