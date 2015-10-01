@@ -26,8 +26,8 @@ public class GUI implements ActionListener, Runnable{
 
 	private JPanel panel;
 
-	private boolean connected, updateServers, quitserver, running = true,
-					clientconnect = true , receive = false;
+	private boolean connected, updateServers, quitserver, running,
+					clientconnect;
 	
 	private JButton button;
 	private JButton connect;
@@ -39,7 +39,7 @@ public class GUI implements ActionListener, Runnable{
 	private LinkedList<String> nickQueue;
 	
 	private String chatString = "";
-	private String name = "";
+	private String name = "", address;
 	private String clientNames = "";
 
 	private Socket socket;
@@ -47,7 +47,7 @@ public class GUI implements ActionListener, Runnable{
 	
 	private JFrame frame;
 	
-	private int i=1337;
+	private int port;
 	
 	private JTextArea chatbox;
 	private JTextField message;
@@ -144,6 +144,9 @@ public class GUI implements ActionListener, Runnable{
 
 		quit.addActionListener(this);
 		changeNick.addActionListener(this);
+		running = true;
+		clientconnect = true ;
+		
 		new Thread(this).start();
 		
 	}
@@ -161,13 +164,12 @@ public class GUI implements ActionListener, Runnable{
 		
 		if(e.getSource() == connect){
 			
-			if(clientconnect){
+			if(clientconnect) {
 				
-				Client client = new  Client(i,"itchy.cs.umu.se",this);
+				Client client = new  Client(port,address,this);
 				clientThread = new Thread(client);
 				clientThread.start();
 				clientconnect = false;
-				i++;
 			}
 			
 		}
@@ -187,7 +189,6 @@ public class GUI implements ActionListener, Runnable{
 			if(message.getText() != ""){
 				addStringToNickQueue(message.getText());
 				message.setText("");
-				receive = true;
 			}
 		}
 		
@@ -195,7 +196,6 @@ public class GUI implements ActionListener, Runnable{
 			if(message.getText() != ""){
 				addStringToQueue(message.getText());
 				message.setText("");
-				receive = true;
 			}
 		}
 		
@@ -246,6 +246,24 @@ public class GUI implements ActionListener, Runnable{
 
 
 	public void run() {
+		chatbox.setText("Chose port to connect to and press sendmessage \n");
+		
+		boolean condition = true;
+		do{
+			if(!getQueue().isEmpty()){
+				port = Integer.parseInt(getQueue().removeFirst());
+				condition = false;
+			}
+			
+		}while(condition);
+		chatbox.setText("Send message for servers adress server\n");
+		do{
+			if(!getQueue().isEmpty()){
+				address = getQueue().removeFirst();
+				condition = true;
+			}
+		}while(!condition);
+		chatbox.setText("Connect to the nameserver by press connect");
 		
 		while(running){
 			String message = "";
@@ -302,12 +320,4 @@ public class GUI implements ActionListener, Runnable{
 		connected = condition;
 	}
 
-
-	public synchronized boolean getReceive() {
-		return receive;
-	}
-	
-	public synchronized void setReceive(boolean condition){
-		receive = condition;
-	}
 }

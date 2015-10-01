@@ -309,11 +309,8 @@ public class Client implements Runnable{
 				server = 0;
 			}
 			while(gui.getConnected()) {
-				if(gui.getReceive()) {
-					receiveTCP();
-					checkMessage(buffer);
-					gui.setReceive(false);
-				}
+				receiveTCP();
+				checkMessage(buffer);
 			}
 		}
 	}
@@ -351,6 +348,7 @@ public class Client implements Runnable{
 			
 			case(UJOIN):
 				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
+				time = (int) PDU.byteArrayToLong(bytes, 4, 8);
 				tempbytes = Arrays.copyOfRange(bytes,8,8+length);
 				
 				name = PDU.bytaArrayToString(tempbytes, length);
@@ -364,6 +362,7 @@ public class Client implements Runnable{
 					nickNames.add(name);
 					gui.getNameFromClient(nickNames);
 				}
+				gui.getStringFromClient(name+" Joined chatroom at: " +time);
 				
 			break;
 			

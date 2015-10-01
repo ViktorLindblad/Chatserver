@@ -9,9 +9,9 @@ public class ULEAVE extends PDU{
 
 	public ULEAVE(String name){
 		
-		long time = System.currentTimeMillis() / 1000L;
+		long time = System.currentTimeMillis();
 	
-		bytes = new ByteSequenceBuilder(OpCode.UJOIN.value)
+		bytes = new ByteSequenceBuilder(OpCode.ULEAVE.value)
 		.append((byte)name.getBytes(StandardCharsets.UTF_8).length).pad()
 		.appendInt((int)time)
 		.append(name.getBytes(StandardCharsets.UTF_8)).pad().toByteArray();

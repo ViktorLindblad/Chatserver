@@ -1,20 +1,21 @@
 package PDU;
 
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.Hashtable;
 
 import Server.ByteSequenceBuilder;
 import Server.OpCode;
 
 public class NICKS extends PDU{
 	
-	public NICKS(ArrayList<String> names){
+	public NICKS(Hashtable<Socket,String> names){
 		
 		int numberOfNicks = names.size();
 		
 		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
-		for(int i = 0; i < numberOfNicks; i++){
-			BSB.append(names.get(i).getBytes(StandardCharsets.UTF_8)).pad();
+		for(Socket temp : names.keySet()){
+			BSB.append(names.get(temp).getBytes(StandardCharsets.UTF_8)).pad();
 		}
 
 		bytes = new ByteSequenceBuilder(OpCode.NICKS.value) 

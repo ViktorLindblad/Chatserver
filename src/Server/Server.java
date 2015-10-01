@@ -1,5 +1,4 @@
 package Server;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,6 +11,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Hashtable;
 
 import PDU.ALIVE;
 import PDU.MESS;
@@ -30,7 +30,7 @@ public class Server implements Runnable{
 	private byte[] buffer,alive;
 	private InetAddress address;
 	private ServerConnector connector;
-	private int serverId, messageIndex;
+	private int serverId;
 	private String serverName, messageName;
 	
 	//sockets
@@ -42,9 +42,10 @@ public class Server implements Runnable{
 	private int port, TCPport;
 	
 	//Lists
-	private ArrayList<String> connectedNames;
+	private Hashtable<Socket,String>  connectedNames;
 	private ArrayList<Socket> connectedClients;
 	private ArrayList<MessageHandler> SMH;
+	
 	//input & output
     private OutputStream outStream;
     private InputStream inStream;
@@ -58,7 +59,7 @@ public class Server implements Runnable{
 		this.TCPport = port;
 		serverName = "Lindblad";
 		
-		connectedNames = new ArrayList<String>();
+		connectedNames = new Hashtable<Socket,String>();
 		connectedClients = new ArrayList<Socket> ();
 		SMH = new ArrayList<MessageHandler> ();
 		buffer = new byte[256];
@@ -240,14 +241,7 @@ public class Server implements Runnable{
 					
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
 					if(ca!=12) {
-						messageIndex = 0;
-						for(Socket socket : connectedClients) {
-							
-							if(socket.equals(temp.getSocket())) {
-								messageName = connectedNames.get(messageIndex);
-							}
-							messageIndex++;
-						}
+						messageName = connectedNames.get(temp.getSocket());
 					}
 					System.out.println("PDU "+ca);
 					switch(ca) {
@@ -273,8 +267,8 @@ public class Server implements Runnable{
 						break;
 						case(QUIT)://QUIT
 							ULEAVE leave = new ULEAVE(messageName);
-							connectedClients.remove(messageIndex-1);
-							connectedNames.remove(messageIndex-1);
+							connectedClients.remove(temp.getSocket());
+							connectedNames.remove(temp.getSocket());
 							
 							sendTCPToAll(leave.toByteArray());
 							
@@ -294,7 +288,7 @@ public class Server implements Runnable{
 								answerSocket(temp.getSocket(),occupied);
 								
 							} else {
-								connectedNames.add(name);
+								connectedNames.put(temp.getSocket(),name);
 								NICKS nick = 
 										new NICKS(connectedNames);
 								
@@ -325,7 +319,7 @@ public class Server implements Runnable{
 								System.out.println("sending UCNICK");
 								sendTCPToAll(cnick.toByteArray());
 								
-								connectedNames.set(messageIndex-1, newName);
+								connectedNames.put(temp.getSocket(), newName);
 							}
 						break;
 						default:
@@ -340,7 +334,8 @@ public class Server implements Runnable{
 	
 	private boolean checkNick(String name) {
 		
-		for(String names : connectedNames) {
+		for(Socket temp : connectedNames.keySet()) {
+			String names = connectedNames.get(temp);
 			if(names.equals(name)) {
 				return true;
 			}
