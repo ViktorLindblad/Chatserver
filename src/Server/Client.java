@@ -13,15 +13,14 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import PDU.CHNICK;
 import PDU.GETLIST;
 import PDU.JOIN;
-import PDU.MESS;
 import PDU.PDU;
-import PDU.QUIT;
 
 public class Client implements Runnable{
 	
@@ -43,7 +42,7 @@ public class Client implements Runnable{
 	private String name = "";
 	private byte[] buffer;
 
-	private boolean running , connected = false;
+	private boolean running ;
 	
 	private OutputStream outStream;
 	private InputStream inStream;
@@ -51,13 +50,12 @@ public class Client implements Runnable{
 	private DataInputStream dataInput;
 	//client is the name we use
 	
-	public Client(int port,  String ip) {
+	public Client(int port,  String ip,GUI gui) {
 
 		//login = new GUI(360,360);
 		this.port = port;
 		buffer = new byte[256];
-		gui = new GUI();
-		new Thread(gui).start();
+		this.gui = gui;
 		servers = 0;		
 		
 		if(!connect(ip,port)){
@@ -69,8 +67,6 @@ public class Client implements Runnable{
 
 		infoToClient();
 		running = true;
-		new Thread (this).start();
-		
 	}
 	
 	private void getlist(){
@@ -209,12 +205,10 @@ public class Client implements Runnable{
 
 			dataInput = new DataInputStream(inStream);
 			dataOutput = new DataOutputStream(outStream);
-			connected = true;
+			gui.setConnected(true);
 			
 			gui.getStringFromClient("Sending request to join...");
 			
-			
-
 		} catch(IOException e){
 			e.printStackTrace();
 		}
@@ -277,7 +271,7 @@ public class Client implements Runnable{
 		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
 		try {
 			multicastSocket.send(packet);
-			multicastSocket.setSoTimeout(1000);
+			multicastSocket.setSoTimeout(5000);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -315,36 +309,8 @@ public class Client implements Runnable{
 				
 				server = 0;
 			}
-			while(connected){
-				/*
-				boolean isClient = true;
-				
-				if(!gui.getQueue().isEmpty()){
-					System.out.println("sending message");
-					message = gui.getQueue().removeFirst();
-					MESS mess = new MESS(message, name, isClient);
-					sendTCP(mess.toByteArray());	
-				}
-				
-				if(!gui.getNickQueue().isEmpty()){
+			while(gui.getConnected()){
 
-					message = gui.getQueue().removeFirst();
-					CHNICK mess = new CHNICK(message);
-					sendTCP(mess.toByteArray());	
-				}
-				
-				if(gui.getQuit()) {
-					gui.setQuit(false);
-					
-					QUIT quit = new QUIT();
-					sendTCP(quit.toByteArray());
-					
-					try {
-						socket.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}*/
 				receiveTCP();
 				checkMessage(buffer);
 			}
@@ -361,29 +327,25 @@ public class Client implements Runnable{
 		switch(ca){
 			case(MESS):
 				int nameLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
-				System.out.println("nameLength "+nameLength);
-				int messageLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
-				System.out.println("messageLength: "+messageLength);
+				length = (int)PDU.byteArrayToLong(bytes, 4, 6);
+
 				time = (int)PDU.byteArrayToLong(bytes, 8, 12);
-				
 				String message = PDU.stringReader(bytes, 12);
-				System.out.println("received message : "+message);
 				
-				String messname = PDU.stringReader(bytes, 12+messageLength);
+				length += 4 - ( length % 4);
+				String messname = PDU.stringReader(bytes, 12+length);
 				
-				String mess = messname+ "said: "+message+" At timestamp:"+String.valueOf(time);
+				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");    
+				Date resultdate = new Date(time);
 				
+				String mess = sdf.format(resultdate)+": "+messname+" said: \n"+message;
 				gui.getStringFromClient(mess);
 				
 			break;
 			
 			case(QUIT):
 				gui.getStringFromClient("Server shutdown!");
-				try {
-					socket.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				
 			break;
 			
 			case(UJOIN):
@@ -416,17 +378,19 @@ public class Client implements Runnable{
 					}
 				}
 				gui.getNameFromClient(nickNames);
+				gui.getStringFromClient(name+" leaved the chatroom");
 			break;
 			
 			case(UCNICK):
 				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
 				int secondLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
 				time = (int)PDU.byteArrayToLong(bytes, 4, 8);
-				tempbytes = Arrays.copyOfRange(bytes,8,8+length);
-				name = PDU.bytaArrayToString(tempbytes, length);
 				
-				byte[] namebyte = Arrays.copyOfRange(bytes,8+length,8+length+secondLength);
-				String name2 = PDU.bytaArrayToString(namebyte, secondLength);
+				name = PDU.stringReader(bytes, 8);
+				
+				length += 4 - (length % 4);
+				
+				String name2 = PDU.stringReader(bytes, 8+length);
 
 		
 			for(int i = 0; i < nickNames.size(); i++ ){
@@ -515,7 +479,8 @@ public class Client implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		Client client = new Client(1337,"itchy.cs.umu.se");
+		GUI client = new GUI();
+		//Client client = new Client(1337,"itchy.cs.umu.se");
 	}
 
 

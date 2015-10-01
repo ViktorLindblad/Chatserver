@@ -117,7 +117,7 @@ public class Server implements Runnable{
 		DatagramPacket packet = new DatagramPacket(data,data.length,address,1337);
 		try {
 			datagramSocket.send(packet);
-			datagramSocket.setSoTimeout(1000);
+			//datagramSocket.setSoTimeout(5000);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -181,37 +181,12 @@ public class Server implements Runnable{
 		}
 		return condition;
 	}
-	/*
-	public boolean addSocketToList(Socket socket, String str){
-		connectedNames.put(str, socket);
-		
-		for(String string : connectedNames.keySet()){
-			out.println(string);
-			out.flush();
-		}
-		
-		return connectedClients.add(str);
-	}
-	
-	public void removeSocketFromList(String str){
-		connectedNames.remove(str);
-		int index = 0;
-		for(String string : connectedClients){
-			index++;
-			if(string.equals(str)){
-				connectedClients.remove(index);
-				return;
-			}
-		}
-	}*/
 
 	public void hearthBeat() {
 
 		Thread thread = new Thread(){
 			public void run(){
-				
-				long time;
-				
+								
 				while(getRunning()){
 					
 					try {
@@ -220,9 +195,7 @@ public class Server implements Runnable{
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-					
-					time = System.nanoTime() * 1000000000;
-										
+															
 					ALIVE alive = 
 							new ALIVE(getClients().size(),getServerId());
 							
@@ -249,15 +222,13 @@ public class Server implements Runnable{
 		while(getRunning()) {
 			
 			if(!connector.getSocketQueue().isEmpty()) {
+				
 				System.out.println("A client connected");
 				Socket socket = connector.getSocketQueue().remove();
-				System.out.println("adding client to list");
+				
 				connectedClients.add(socket);
-				System.out.println(connectedClients.size());
 				MessageHandler messageHandler = new MessageHandler(socket);
 				SMH.add(messageHandler);
-				System.out.println("Server starts a new thread for a server message handler");
-				new Thread(messageHandler).start();
 			}
 			
 			for(MessageHandler temp : SMH) {
@@ -268,16 +239,17 @@ public class Server implements Runnable{
 					buffer = temp.getMessageQueue().remove();
 					
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
-					if(ca!=12){
+					if(ca!=12) {
 						messageIndex = 0;
-						for(Socket socket : connectedClients){
+						for(Socket socket : connectedClients) {
 							
-							if(socket.equals(temp.getSocket())){
+							if(socket.equals(temp.getSocket())) {
 								messageName = connectedNames.get(messageIndex);
 							}
 							messageIndex++;
 						}
 					}
+					System.out.println("PDU "+ca);
 					switch(ca) {
 						case(MESS)://MESS
 							for(int i=0; i<buffer.length; i++){
@@ -301,7 +273,11 @@ public class Server implements Runnable{
 						break;
 						case(QUIT)://QUIT
 							ULEAVE leave = new ULEAVE(messageName);
+							connectedClients.remove(messageIndex-1);
+							connectedNames.remove(messageIndex-1);
+							
 							sendTCPToAll(leave.toByteArray());
+							
 						break;
 						case(JOIN)://JOIN
 							String name = readNameFromMessage(buffer);
@@ -330,6 +306,7 @@ public class Server implements Runnable{
 							}
 						break;
 						case(CHNICK)://CHNICK
+							System.out.println("CHNICK");
 							String newName = readNameFromMessage(buffer);
 							if(checkNick(newName)){
 								
@@ -345,9 +322,10 @@ public class Server implements Runnable{
 							
 							} else {
 								UCNICK cnick = new UCNICK(messageName,newName);
+								System.out.println("sending UCNICK");
 								sendTCPToAll(cnick.toByteArray());
 								
-								connectedNames.set(messageIndex, newName);
+								connectedNames.set(messageIndex-1, newName);
 							}
 						break;
 						default:

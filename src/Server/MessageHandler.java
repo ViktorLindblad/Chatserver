@@ -13,12 +13,15 @@ public class MessageHandler implements Runnable {
 	private InputStream inStream;
 	private DataInputStream dataInput;
 	private boolean running;
+	private Thread thread;
 	
 	public MessageHandler(Socket socket){
 		
 		this.socket = socket;
 		messageQueue = new LinkedList <byte[]>();
 		running = true;
+		thread = new Thread(this);
+		thread.start();
 	}
 
 	public void run() {
@@ -43,7 +46,32 @@ public class MessageHandler implements Runnable {
 				
 			} catch (IOException e) {
 				e.printStackTrace();
-			}   
+			} finally {
+		        if (PDU.byteArrayToLong(buffer, 0, 1)==11) {
+		        	System.out.println("Client wants to quit");
+		            try {
+		                dataInput.close();
+		            } catch (IOException e) {
+		            	e.printStackTrace();
+		            }
+		    		try {
+		    			inStream.close();
+		    		} catch (IOException e) {
+		    			e.printStackTrace();
+		    		}
+		    		try {
+		    			socket.close();
+		    		} catch (IOException e) {
+		    			e.printStackTrace();
+		    		}
+		    		messageQueue.add(buffer);
+		    		try {
+						thread.join();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+		        }
+		    } 
 						
 	        messageQueue.add(buffer); 
 		}

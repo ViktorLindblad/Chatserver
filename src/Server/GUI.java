@@ -26,9 +26,11 @@ public class GUI implements ActionListener, Runnable{
 
 	private JPanel panel;
 
-	private boolean updateServers, quitserver, running = true;
+	private boolean connected, updateServers, quitserver, running = true,
+					clientconnect = true;
 	
 	private JButton button;
+	private JButton connect;
 	private JButton update;
 	private JButton quit;
 	private JButton changeNick;
@@ -51,6 +53,8 @@ public class GUI implements ActionListener, Runnable{
 	private JScrollPane chatScroll;
 	private JScrollPane clientsScroll;
 	
+	private Thread clientThread;
+	
 	public GUI(){
 		socket = null;
 		updateServers = false;
@@ -68,6 +72,7 @@ public class GUI implements ActionListener, Runnable{
 		panel = new JPanel();
 		button = new JButton("Send message");
 		update = new JButton("Update");
+		connect = new JButton("Connect");
 		
 		quit = new JButton("Quit");
 		changeNick = new JButton("Change nickname");
@@ -88,6 +93,7 @@ public class GUI implements ActionListener, Runnable{
 		panel.add(clients);
 		panel.add(button);
 		panel.add(update);
+		panel.add(connect);
 
 		frame.setSize(620,360);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -120,16 +126,23 @@ public class GUI implements ActionListener, Runnable{
 		clientsScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		button.setBounds(250,290,150,32);
 		
+		connect.setBounds(50, 290, 150, 32);
+		
 		update.setBounds(450,210,150,32);
+		
 		
 		quit.setBounds(450, 290, 150, 32);
 		changeNick.setBounds(450, 250, 150, 32);
 		
 		button.addActionListener(this);
 		update.addActionListener(this);
+		
+		connect.addActionListener(this);
+		
 
 		quit.addActionListener(this);
 		changeNick.addActionListener(this);
+		new Thread(this).start();
 		
 	}
 
@@ -143,12 +156,25 @@ public class GUI implements ActionListener, Runnable{
 	}
 
 	public void actionPerformed(ActionEvent e) {
+		
+		if(e.getSource() == connect){
+			
+			if(clientconnect){
+				Client client = new  Client(1337,"itchy.cs.umu.se",this);
+				clientThread = new Thread(client);
+				clientThread.start();
+				clientconnect = false;
+			}
+			
+		}
+		
 		if(e.getSource() == update){
 			setUpdate(true);
 		}
 		
 		if(e.getSource() == quit){
 			setQuit(true);
+			clientconnect = true;
 		}
 		
 		if(e.getSource() == changeNick){
@@ -194,7 +220,7 @@ public class GUI implements ActionListener, Runnable{
 	
 	public synchronized void getNameFromClient(ArrayList<String> nickNames){
 		clientNames = "";
-		clients.setText("");
+		clients.setText(null);
 		for(String temp : nickNames) {
 			clientNames += temp + "\n";
 		}
@@ -224,7 +250,7 @@ public class GUI implements ActionListener, Runnable{
 			}
 			if(!getNickQueue().isEmpty()&&socket!=null){
 	
-				message = getQueue().removeFirst();
+				message = getNickQueue().removeFirst();
 				CHNICK mess = new CHNICK(message);
 				sendTCP(mess.toByteArray());	
 			}
@@ -234,11 +260,13 @@ public class GUI implements ActionListener, Runnable{
 				
 				QUIT quit = new QUIT();
 				sendTCP(quit.toByteArray());
-				
-				try {
-					socket.close();
-				} catch (IOException e) {
-					e.printStackTrace();
+				connected = false;
+				if(clientThread != null) {
+					try {
+						clientThread.wait();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}
@@ -261,5 +289,14 @@ public class GUI implements ActionListener, Runnable{
 			e.printStackTrace();
 		}
 		
+	}
+
+
+	public synchronized boolean getConnected() {
+		return connected;
+	}
+	
+	public synchronized void setConnected(boolean condition){
+		connected = condition;
 	}
 }
