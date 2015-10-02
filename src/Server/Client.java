@@ -50,13 +50,18 @@ public class Client implements Runnable{
 	private DataInputStream dataInput;
 	//client is the name we use
 	
-	public Client(int tcpPort, String ip,GUI gui, int port) {
+	public Client(int tcpPort,  String ip,GUI gui, int port) {
 
 		this.port = port;
 		this.tcpPort = tcpPort;
 		buffer = new byte[256];
 		this.gui = gui;
 		servers = 0;		
+		
+		System.out.println("port: "+this.port);
+		System.out.println("TCPport"+this.tcpPort);
+		System.out.println("local "+port);
+		System.out.println("localtcp "+tcpPort);
 		
 		if(!connect(ip,port)){
 			System.out.println("Connection failed");
@@ -87,6 +92,7 @@ public class Client implements Runnable{
 			
 			sequenceNumber = (int)PDU.byteArrayToLong(message,1,2);
 			servers = (int)PDU.byteArrayToLong(message,2,4);
+			System.out.println(servers);
 			int byteIndex = 4;
 			int tempint;
 			byte[] tempbytes;
@@ -196,7 +202,7 @@ public class Client implements Runnable{
 
 		try{
 			
-			socket = new Socket(ip,tcpPort);
+			socket = new Socket("Localhost",tcpPort);
 			outStream = socket.getOutputStream();
 			
 			inStream = socket.getInputStream();
@@ -233,8 +239,10 @@ public class Client implements Runnable{
 
 	private boolean connect(String ip, int port){
 		try {
+			System.out.println(port);
 			multicastSocket = new MulticastSocket(port);
 			address = InetAddress.getByName(ip);
+			System.out.println(address);
 		}	catch (SocketException e){
 			e.printStackTrace();
 			return false;
@@ -265,7 +273,7 @@ public class Client implements Runnable{
 	}
 	
 	private void send(byte[] data){
-		DatagramPacket packet = new DatagramPacket(data,data.length,address,tcpPort);
+		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
 		try {
 			multicastSocket.send(packet);
 			multicastSocket.setSoTimeout(5000);
@@ -404,11 +412,40 @@ public class Client implements Runnable{
 			break;
 			
 			case(NICKS):
-				int numberOfNicks = (int)PDU.byteArrayToLong(bytes, 1, 2);
-				length = (int)PDU.byteArrayToLong(bytes, 2, 4);
-				byte[] names = Arrays.copyOfRange(bytes, 4, 4+length);
-				
-				getNamesFromNICKS(names,length,numberOfNicks);
+				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
+				int index = 4;
+				boolean condition;
+				System.out.println("NICKS " +length);
+				for(int i = 0; i < length; i++){
+					condition = true;
+					name = "";
+					do{
+						byte[] tempbyte = Arrays.copyOfRange(bytes, index, index+1);
+						String character = PDU.bytaArrayToString(tempbyte, 1);
+						System.out.println(character);
+						if(character.equals("\0")){
+							condition = false;
+						} else {
+							name += character;
+						}
+						
+						index++;
+					}while(condition);
+					
+					boolean dont = true;
+					
+					for(String temp : nickNames){
+						
+						if(name.equals(temp)){
+							dont = false;
+						}
+					}
+
+					if(dont){
+						nickNames.add(name);
+					}
+				}
+
 				gui.getNameFromClient(nickNames);
 
 			break;
@@ -422,47 +459,6 @@ public class Client implements Runnable{
 		}
 	}
 	
-	private void getNamesFromNICKS(byte[] names, int length, int numberOfNicks) {
-		int index = 0;
-		boolean condition;
-		
-		for(int i = 0; i < numberOfNicks; i++){
-			condition = true;
-			String name = "";
-
-			do{
-				byte[] tempbyte = Arrays.copyOfRange(names, index, index+1);
-				String character = PDU.bytaArrayToString(tempbyte, 1);
-
-				if(character.equals("\0")){
-					condition = false;
-				} else {
-					name += character;
-				}
-				
-				index++;
-			}while(condition);
-			
-			checkNickNames(name);
-		}
-		
-	}
-	
-	private void checkNickNames(String name){
-		boolean dont = true;
-		
-		for(String temp : nickNames){
-			
-			if(name.equals(temp)){
-				dont = false;
-			}
-		}
-
-		if(dont){
-			nickNames.add(name);
-		}
-	}
-
 	public boolean isNumber(Object o){
 	        boolean isNumber = true;
 
@@ -490,7 +486,7 @@ public class Client implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		GUI client = new GUI(2);
+		GUI client = new GUI(15);
 		//Client client = new Client(1337,"itchy.cs.umu.se");
 	}
 

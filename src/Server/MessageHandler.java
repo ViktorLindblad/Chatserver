@@ -66,7 +66,7 @@ public class MessageHandler implements Runnable {
 			byte [] buffer = null;
 			
 			try {
-				length = dataInput.readByte();
+				length = dataInput.read();
 				buffer = new byte[length];
 				buffer = PDU.readExactly(inStream, length);
 				

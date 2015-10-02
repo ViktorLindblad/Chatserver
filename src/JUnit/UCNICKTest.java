@@ -18,36 +18,40 @@ import Server.Server;
 
 public class UCNICKTest {
 	
-	private Socket s1,s2;
-	private Server server;
-	private OutputStream outStream1,outStream2;
-	private InputStream inStream1, inStream2;
-	private DataInputStream dataInput1, dataInput2;
-	private DataOutputStream dataOutput1, dataOutput2;
+	private static boolean isSetUpDone = false;
+	private static Socket s1,s2;
+	private static Server server;
+	private static OutputStream outStream1,outStream2;
+	private static InputStream inStream1, inStream2;
+	private static DataInputStream dataInput1, dataInput2;
+	private static DataOutputStream dataOutput1, dataOutput2;
 	
 	@Before
 	public void setup(){
-		server = new Server(12,"itchy.cs.umu.se");
-		try {
-			s1 = new Socket(server.getAddress(),12);
-			outStream1 = s1.getOutputStream();
-			inStream1 = s1.getInputStream();
-		} catch (IOException e) {
-			e.printStackTrace();
+		if(isSetUpDone){
+			server = new Server(12,"itchy.cs.umu.se");
+			try {
+				s1 = new Socket(server.getAddress(),12);
+				outStream1 = s1.getOutputStream();
+				inStream1 = s1.getInputStream();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+	
+			dataInput1 = new DataInputStream(inStream1);
+			dataOutput1 = new DataOutputStream(outStream1);
+	
+			try {
+				s2 = new Socket(server.getAddress(),12);
+				outStream2 = s2.getOutputStream();
+				inStream2 = s2.getInputStream();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			dataInput2 = new DataInputStream(inStream2);
+			dataOutput2 = new DataOutputStream(outStream2);
+			isSetUpDone = true;
 		}
-
-		dataInput1 = new DataInputStream(inStream1);
-		dataOutput1 = new DataOutputStream(outStream1);
-
-		try {
-			s2 = new Socket(server.getAddress(),12);
-			outStream2 = s2.getOutputStream();
-			inStream2 = s2.getInputStream();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		dataInput2 = new DataInputStream(inStream2);
-		dataOutput2 = new DataOutputStream(outStream2);
 	}
 	
 	@Test

@@ -460,7 +460,7 @@ public class Server implements Runnable{
 		return server.getInetAddress();
 	}
 	
-	public Hashtable<Socket, String> getNames(){
+	public synchronized Hashtable<Socket, String> getNames(){
 		return connectedNames;
 	}
 	
