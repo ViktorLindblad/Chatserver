@@ -28,59 +28,55 @@ public class MessageHandler implements Runnable {
 	public void run() {
 
 		while(running){
-			synchronized(this){
-				if(!receivedCorrectMessage()){
-					
-	
-		        	try {
-		                dataInput.close();
-		            } catch (IOException e) {
-		            	e.printStackTrace();
-		            }
-		    		try {
-		    			inStream.close();
-		    		} catch (IOException e) {
-		    			e.printStackTrace();
-		    		}
-		    		try {
-		    			socket.close();
-		    		} catch (IOException e) {
-		    			e.printStackTrace();
-		    		}
-		    		try {
-						thread.join();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-		        }
-			
+
+			if(!receivedCorrectMessage()){
 				
-				try{
-					inStream = socket.getInputStream();
-					dataInput = new DataInputStream(inStream);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-		
-				int length;
-				byte [] buffer = null;
-				
-				try {
-					length = dataInput.readByte();
-					buffer = new byte[length];
-					buffer = PDU.readExactly(inStream, length);
-					
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-								     
-				messageQueue.add(buffer);
-				try {
-					wait();
+
+	        	try {
+	                dataInput.close();
+	            } catch (IOException e) {
+	            	e.printStackTrace();
+	            }
+	    		try {
+	    			inStream.close();
+	    		} catch (IOException e) {
+	    			e.printStackTrace();
+	    		}
+	    		try {
+	    			socket.close();
+	    		} catch (IOException e) {
+	    			e.printStackTrace();
+	    		}
+	    		try {
+					thread.join();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+	        }
+		
+			
+			try{
+				inStream = socket.getInputStream();
+				dataInput = new DataInputStream(inStream);
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
+	
+			int length;
+			byte [] buffer = null;
+			
+			try {
+				length = dataInput.readByte();
+				buffer = new byte[length];
+				buffer = PDU.readExactly(inStream, length);
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+							     
+			messageQueue.add(buffer);
+
+			
 		}
 	}
 	

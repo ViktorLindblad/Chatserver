@@ -3,6 +3,9 @@ import java.io.IOException;
 import java.net.*;
 import java.util.LinkedList;
 
+import PDU.ALIVE;
+import PDU.PDU;
+
 
 public class ServerConnector implements Runnable {
 
@@ -10,26 +13,35 @@ public class ServerConnector implements Runnable {
 	private LinkedList<Socket> queue;
 	private boolean running;
 	
-	public ServerConnector(ServerSocket server){
+	private int port;
+	private SecurityManager securityManager;
+	private String hostname;
+	
+	public ServerConnector(ServerSocket server,int port, String hostname){
 		queue = new LinkedList<Socket>();
 		this.server = server;
 		running = true;
+		this.port = port;
+		this.hostname = hostname;
+		securityManager = new SecurityManager();
 	}
 	
 	public void run(){
-		
 		while(running){
+			
 			System.out.println("listning after clients");
+			
 			try {
 				queue.add(server.accept());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			
 			System.out.println("client joined server");
-			System.out.println(queue.isEmpty());
 		}
 	}
-	
+
+
 	public synchronized boolean getConnectorRunning(){
 		return running;
 	}

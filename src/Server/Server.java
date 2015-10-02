@@ -75,7 +75,9 @@ public class Server implements Runnable{
 		
 		setServerId(regServer());
 						
-		connector = new ServerConnector(server);
+		connector = 
+				new ServerConnector(server,TCPport,
+						server.getInetAddress().getHostName());
 		
 		new Thread(connector).start(); 
 		
@@ -183,7 +185,7 @@ public class Server implements Runnable{
 		return condition;
 	}
 
-	public void hearthBeat() {
+	private void hearthBeat() {
 
 		Thread thread = new Thread(){
 			public void run(){
@@ -198,7 +200,7 @@ public class Server implements Runnable{
 					}
 															
 					ALIVE alive = 
-							new ALIVE(getClients().size(),getServerId());
+							new ALIVE(connectedClients.size(),getServerId());
 							
 					send(alive.toByteArray());
 					
@@ -209,6 +211,20 @@ public class Server implements Runnable{
 						regServer();
 					} else if(PDU.byteArrayToLong(message, 0, 1)==1){
 					}
+				}
+			}
+		};
+		
+		thread.start();
+	}
+	
+	public void checkMessage() {
+
+		Thread thread = new Thread(){
+			public void run(){
+								
+				while(getRunning()){
+
 				}
 			}
 		};
@@ -231,139 +247,125 @@ public class Server implements Runnable{
 				MessageHandler messageHandler = new MessageHandler(socket);
 				SMH.add(messageHandler);
 			}
-			
-			for(MessageHandler temp : SMH) {
-				synchronized(temp){
-					if(!temp.getMessageQueue().isEmpty()) {
 
-						buffer = temp.getMessageQueue().remove();
-						
-						int ca = (int)PDU.byteArrayToLong(buffer,0,1);
-						if(ca!=12) {
-							messageName = connectedNames.get(temp.getSocket());
-						}
-						
-						System.out.println("PDU "+ca);
-						
-						switch(ca) {
-							case(MESS)://MESS
-								for(int i=0; i<buffer.length; i++){
-									System.out.println(buffer[i]);
-								}
-								if(checkMessageLength(buffer)){
-									temp.setReceivedCorrectMessage(true);
-									temp.notify();
-									int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
-									String message = PDU.stringReader(buffer, 8,messageLength);
-								
-									MESS mess = new MESS(message, messageName, false);						
-									sendTCPToAll(mess.toByteArray());
-								} else {
-									clientSentCorruptMessage();
-									ULEAVE leave = new ULEAVE(messageName);
-									
-									connectedClients.remove(temp.getSocket());
-									connectedNames.remove(temp.getSocket());
-									sendTCPToAll(leave.toByteArray());
-									temp.setReceivedCorrectMessage(false);
-									temp.notify();
-								}
-							break;
-							case(QUIT)://QUIT
-								temp.setReceivedCorrectMessage(false);
-								temp.notify();
+			for(MessageHandler temp : SMH) {
+				if(!temp.getMessageQueue().isEmpty()) {
+
+					buffer = temp.getMessageQueue().remove();
+					
+					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
+					if(ca!=12) {
+						messageName = connectedNames.get(temp.getSocket());
+					}
+					
+					switch(ca) {
+						case(MESS)://MESS
+							for(int i=0; i<buffer.length; i++){
+								System.out.println(buffer[i]);
+							}
+							if(checkMessageLength(buffer)){
+								temp.setReceivedCorrectMessage(true);
+								int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
+								String message = PDU.stringReader(buffer, 8,messageLength);
+							
+								MESS mess = new MESS(message, messageName, false);						
+								sendTCPToAll(mess.toByteArray());
+							} else {
+								clientSentCorruptMessage();
 								ULEAVE leave = new ULEAVE(messageName);
+								
+								connectedClients.remove(temp.getSocket());
+								connectedNames.remove(temp.getSocket());
+								sendTCPToAll(leave.toByteArray());
+								temp.setReceivedCorrectMessage(false);
+							}
+						break;
+						case(QUIT)://QUIT
+							temp.setReceivedCorrectMessage(false);
+							ULEAVE leave = new ULEAVE(messageName);
+							connectedClients.remove(temp.getSocket());
+							connectedNames.remove(temp.getSocket());
+							
+							sendTCPToAll(leave.toByteArray());
+							
+						break;
+						case(JOIN)://JOIN
+							String name = readNameFromMessage(buffer);
+							
+							if(checkNameLength(buffer)) {
+								temp.setReceivedCorrectMessage(true);
+								if( checkNick(name)) {
+									ByteSequenceBuilder BSB = 
+											new ByteSequenceBuilder();
+									
+									byte[] occupied = 
+											BSB.append(OpCode.NICKO.value)
+											.pad()
+											.toByteArray();
+									
+									answerSocket(temp.getSocket(),occupied);
+								} else {
+									temp.setReceivedCorrectMessage(true);
+									connectedNames.put(temp.getSocket(),name);
+									NICKS nick = 
+											new NICKS(connectedNames);
+									
+									answerSocket(temp.getSocket(),
+											nick.toByteArray());
+								
+									UJOIN join = new UJOIN(name);
+									sendTCPToAll(join.toByteArray());
+								}
+								
+							} else {
+								clientHasToLongName();
+								ULEAVE uleave = new ULEAVE(messageName);
+								
 								connectedClients.remove(temp.getSocket());
 								connectedNames.remove(temp.getSocket());
 								
-								sendTCPToAll(leave.toByteArray());
-								
-							break;
-							case(JOIN)://JOIN
-								String name = readNameFromMessage(buffer);
-								
-								if(checkNameLength(buffer)) {
-									temp.setReceivedCorrectMessage(true);
-									temp.notify();
-									if( checkNick(name)) {
-										ByteSequenceBuilder BSB = 
-												new ByteSequenceBuilder();
-										
-										byte[] occupied = 
-												BSB.append(OpCode.NICKO.value)
-												.pad()
-												.toByteArray();
-										
-										answerSocket(temp.getSocket(),occupied);
-									} else {
-										temp.setReceivedCorrectMessage(true);
-										temp.notify();
-										connectedNames.put(temp.getSocket(),name);
-										NICKS nick = 
-												new NICKS(connectedNames);
-										
-										answerSocket(temp.getSocket(),
-												nick.toByteArray());
-									
-										UJOIN join = new UJOIN(name);
-										sendTCPToAll(join.toByteArray());
-									}
-									
-								} else {
-									clientHasToLongName();
-									ULEAVE uleave = new ULEAVE(messageName);
-									
-									connectedClients.remove(temp.getSocket());
-									connectedNames.remove(temp.getSocket());
-									
-									sendTCPToAll(uleave.toByteArray());
-									temp.setReceivedCorrectMessage(false);
-									temp.notify();
-								}
-								
-							break;
-							case(CHNICK)://CHNICK
-								String newName = readNameFromMessage(buffer);
-								if(checkNameLength(buffer)) {
-									if(checkNick(newName)){
-										temp.setReceivedCorrectMessage(true);
-										temp.notify();
-										ByteSequenceBuilder BSB = 
-												new ByteSequenceBuilder();
-										
-										byte[] occupied = 
-												BSB.append(OpCode.NICKO.value)
-												.pad()
-												.toByteArray();
-										
-										answerSocket(temp.getSocket(),occupied);
-									
-									} else {
-										temp.setReceivedCorrectMessage(true);
-										temp.notify();
-										UCNICK cnick = new UCNICK(messageName,newName);
-										System.out.println("sending UCNICK");
-										sendTCPToAll(cnick.toByteArray());
-										
-										connectedNames.put(temp.getSocket(), newName);
-									}
-								} else {
-									clientHasToLongName();
-									ULEAVE uleave = new ULEAVE(messageName);
-									
-									connectedClients.remove(temp.getSocket());
-									connectedNames.remove(temp.getSocket());
-									
-									sendTCPToAll(uleave.toByteArray());
-									temp.setReceivedCorrectMessage(false);
-									temp.notify();
-								}
-							break;
-							default:
+								sendTCPToAll(uleave.toByteArray());
 								temp.setReceivedCorrectMessage(false);
-								temp.notify();
-							break;
-						}
+							}
+							
+						break;
+						case(CHNICK)://CHNICK
+							String newName = readNameFromMessage(buffer);
+							if(checkNameLength(buffer)) {
+								if(checkNick(newName)){
+									temp.setReceivedCorrectMessage(true);
+									ByteSequenceBuilder BSB = 
+											new ByteSequenceBuilder();
+									
+									byte[] occupied = 
+											BSB.append(OpCode.NICKO.value)
+											.pad()
+											.toByteArray();
+									
+									answerSocket(temp.getSocket(),occupied);
+								
+								} else {
+									temp.setReceivedCorrectMessage(true);
+									UCNICK cnick = new UCNICK(messageName,newName);
+									System.out.println("sending UCNICK");
+									sendTCPToAll(cnick.toByteArray());
+									
+									connectedNames.put(temp.getSocket(), newName);
+								}
+							} else {
+								clientHasToLongName();
+								ULEAVE uleave = new ULEAVE(messageName);
+								
+								connectedClients.remove(temp.getSocket());
+								connectedNames.remove(temp.getSocket());
+								
+								sendTCPToAll(uleave.toByteArray());
+								temp.setReceivedCorrectMessage(false);
+							}
+						break;
+						default:
+							temp.setReceivedCorrectMessage(false);
+						break;
 					}
 				}
 			}
@@ -381,7 +383,7 @@ public class Server implements Runnable{
 		return false;
 	}
 
-	private void answerSocket(Socket temp, byte[] bytes) {
+	public synchronized void answerSocket(Socket temp, byte[] bytes) {
 			OutputStream DO;
 		try {
 			DO = temp.getOutputStream();
@@ -401,7 +403,7 @@ public class Server implements Runnable{
 
 	}
 
-	private void sendTCPToAll(byte[] message) {
+	public synchronized void sendTCPToAll(byte[] message) {
 		for(Socket temp : connectedClients){
 			
 			OutputStream DO;
@@ -429,29 +431,25 @@ public class Server implements Runnable{
 		serverId = id;
 	}
 	
-	public synchronized ArrayList<Socket> getClients(){
-		return connectedClients;
-	}	
-	
-	public void clientSentCorruptMessage(){
+	private void clientSentCorruptMessage(){
 		String errorMessage = "##You have send a corrupt message, goodbye!##";
 		MESS mess = new MESS(errorMessage, serverName, false);
 		sendTCPToAll(mess.toByteArray());
 	}
 	
-	public void clientHasToLongName(){
+	private void clientHasToLongName(){
 		String errorMessage = "##Your nickname is to long, goodbye!##";
 		MESS mess = new MESS(errorMessage, serverName, false);
 		sendTCPToAll(mess.toByteArray());
 	}
 	
 	
-	public boolean checkMessageLength(byte[] bytes){
+	private boolean checkMessageLength(byte[] bytes){
 		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
 		return messageHasLength <= 65535;	
 	}
 	
-	public boolean checkNameLength(byte[] bytes){
+	private boolean checkNameLength(byte[] bytes){
 
 		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
 		return messageHasLength <= 255;	

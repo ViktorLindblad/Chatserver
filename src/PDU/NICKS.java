@@ -14,8 +14,10 @@ public class NICKS extends PDU{
 		int numberOfNicks = names.size();
 		
 		ByteSequenceBuilder BSB = new ByteSequenceBuilder();
+		
 		for(Socket temp : names.keySet()){
-			BSB.append(names.get(temp).getBytes(StandardCharsets.UTF_8)).pad();
+			BSB.append(names.get(temp)
+					.getBytes(StandardCharsets.UTF_8)).padshort();			
 		}
 
 		bytes = new ByteSequenceBuilder(OpCode.NICKS.value) 

@@ -36,7 +36,7 @@ public class Client implements Runnable{
 	private ArrayList<Integer> serverClients;
 	private ArrayList<String> nickNames;
 	
-	private int port, sequenceNumber, servers;
+	private int port, tcpPort, sequenceNumber, servers;
 	private InetAddress address;
 	private GUI gui;
 	private String name = "";
@@ -50,9 +50,10 @@ public class Client implements Runnable{
 	private DataInputStream dataInput;
 	//client is the name we use
 	
-	public Client(int port,  String ip,GUI gui) {
+	public Client(int tcpPort,  String ip,GUI gui, int port) {
 
 		this.port = port;
+		this.tcpPort = tcpPort;
 		buffer = new byte[256];
 		this.gui = gui;
 		servers = 0;		
@@ -174,9 +175,7 @@ public class Client implements Runnable{
 		try {
 			length =(int) dataInput.readByte();
 			buffer = new byte[length];
-			buffer = PDU.readExactly(inStream, length);
-			gui.getStringFromClient(String.valueOf(PDU.byteArrayToLong(buffer, 0, 1)));
-			
+			buffer = PDU.readExactly(inStream, length);			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}   
@@ -193,11 +192,11 @@ public class Client implements Runnable{
 		
 	}
 	
-	private boolean connectToTCP(int port,Inet4Address ip) {
+	private boolean connectToTCP(int tcpPort,Inet4Address ip) {
 
 		try{
 			
-			socket = new Socket(ip.getCanonicalHostName(),port);
+			socket = new Socket(ip,tcpPort);
 			outStream = socket.getOutputStream();
 			
 			inStream = socket.getInputStream();
@@ -212,10 +211,7 @@ public class Client implements Runnable{
 			e.printStackTrace();
 		}
 		
-		JOIN join = new JOIN(name);
-		
-		System.out.println("name "+name);
-		
+		JOIN join = new JOIN(name);		
 		
 		sendTCP(join.toByteArray());
 
@@ -237,7 +233,7 @@ public class Client implements Runnable{
 
 	private boolean connect(String ip, int port){
 		try {
-			multicastSocket = new MulticastSocket(1);
+			multicastSocket = new MulticastSocket(port);
 			address = InetAddress.getByName(ip);
 		}	catch (SocketException e){
 			e.printStackTrace();
@@ -269,7 +265,7 @@ public class Client implements Runnable{
 	}
 	
 	private void send(byte[] data){
-		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
+		DatagramPacket packet = new DatagramPacket(data,data.length,address,tcpPort);
 		try {
 			multicastSocket.send(packet);
 			multicastSocket.setSoTimeout(5000);
@@ -305,8 +301,6 @@ public class Client implements Runnable{
 				
 				} while(connectToTCP(serverPort.get(server-1),
 								adresses.get(server-1)));
-				
-				gui.getStringFromClient(String.valueOf(PDU.byteArrayToLong(buffer, 0, 1)));
 				
 				server = 0;
 			}
@@ -416,10 +410,11 @@ public class Client implements Runnable{
 				System.out.println("NICKS " +length);
 				for(int i = 0; i < length; i++){
 					condition = true;
+					name = "";
 					do{
 						byte[] tempbyte = Arrays.copyOfRange(bytes, index, index+1);
 						String character = PDU.bytaArrayToString(tempbyte, 1);
-						
+						System.out.println(character);
 						if(character.equals("\0")){
 							condition = false;
 						} else {
@@ -483,7 +478,7 @@ public class Client implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		GUI client = new GUI();
+		GUI client = new GUI(2);
 		//Client client = new Client(1337,"itchy.cs.umu.se");
 	}
 

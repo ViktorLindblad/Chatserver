@@ -48,6 +48,7 @@ public class GUI implements ActionListener, Runnable{
 	private JFrame frame;
 	
 	private int port;
+	private int TCPport;
 	
 	private JTextArea chatbox;
 	private JTextField message;
@@ -57,7 +58,8 @@ public class GUI implements ActionListener, Runnable{
 	
 	private Thread clientThread;
 	
-	public GUI(){
+	public GUI(int TCPport){
+		this.TCPport = TCPport;
 		socket = null;
 		updateServers = false;
 		
@@ -166,7 +168,7 @@ public class GUI implements ActionListener, Runnable{
 			
 			if(clientconnect) {
 				
-				Client client = new  Client(port,address,this);
+				Client client = new  Client(port,address,this,TCPport);
 				clientThread = new Thread(client);
 				clientThread.start();
 				clientconnect = false;
