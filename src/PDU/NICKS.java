@@ -21,7 +21,8 @@ public class NICKS extends PDU{
 		}
 
 		bytes = new ByteSequenceBuilder(OpCode.NICKS.value) 
-				.append((byte)numberOfNicks).pad()
+				.append((byte)numberOfNicks)
+				.appendShort((short)BSB.size())
 				.append(BSB.toByteArray()).pad().toByteArray();		
 	}
 

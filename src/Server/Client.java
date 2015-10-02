@@ -50,7 +50,7 @@ public class Client implements Runnable{
 	private DataInputStream dataInput;
 	//client is the name we use
 	
-	public Client(int tcpPort,  String ip,GUI gui, int port) {
+	public Client(int tcpPort, String ip,GUI gui, int port) {
 
 		this.port = port;
 		this.tcpPort = tcpPort;
@@ -404,40 +404,11 @@ public class Client implements Runnable{
 			break;
 			
 			case(NICKS):
-				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
-				int index = 4;
-				boolean condition;
-				System.out.println("NICKS " +length);
-				for(int i = 0; i < length; i++){
-					condition = true;
-					name = "";
-					do{
-						byte[] tempbyte = Arrays.copyOfRange(bytes, index, index+1);
-						String character = PDU.bytaArrayToString(tempbyte, 1);
-						System.out.println(character);
-						if(character.equals("\0")){
-							condition = false;
-						} else {
-							name += character;
-						}
-						
-						index++;
-					}while(condition);
-					
-					boolean dont = true;
-					
-					for(String temp : nickNames){
-						
-						if(name.equals(temp)){
-							dont = false;
-						}
-					}
-
-					if(dont){
-						nickNames.add(name);
-					}
-				}
-
+				int numberOfNicks = (int)PDU.byteArrayToLong(bytes, 1, 2);
+				length = (int)PDU.byteArrayToLong(bytes, 2, 4);
+				byte[] names = Arrays.copyOfRange(bytes, 4, 4+length);
+				
+				getNamesFromNICKS(names,length,numberOfNicks);
 				gui.getNameFromClient(nickNames);
 
 			break;
@@ -451,6 +422,47 @@ public class Client implements Runnable{
 		}
 	}
 	
+	private void getNamesFromNICKS(byte[] names, int length, int numberOfNicks) {
+		int index = 0;
+		boolean condition;
+		
+		for(int i = 0; i < numberOfNicks; i++){
+			condition = true;
+			String name = "";
+
+			do{
+				byte[] tempbyte = Arrays.copyOfRange(names, index, index+1);
+				String character = PDU.bytaArrayToString(tempbyte, 1);
+
+				if(character.equals("\0")){
+					condition = false;
+				} else {
+					name += character;
+				}
+				
+				index++;
+			}while(condition);
+			
+			checkNickNames(name);
+		}
+		
+	}
+	
+	private void checkNickNames(String name){
+		boolean dont = true;
+		
+		for(String temp : nickNames){
+			
+			if(name.equals(temp)){
+				dont = false;
+			}
+		}
+
+		if(dont){
+			nickNames.add(name);
+		}
+	}
+
 	public boolean isNumber(Object o){
 	        boolean isNumber = true;
 

@@ -58,6 +58,8 @@ public class GUI implements ActionListener, Runnable{
 	
 	private Thread clientThread;
 	
+	
+	
 	public GUI(int TCPport){
 		this.TCPport = TCPport;
 		socket = null;

@@ -456,6 +456,14 @@ public class Server implements Runnable{
 		
 	}
 	
+	public InetAddress getAddress(){
+		return server.getInetAddress();
+	}
+	
+	public Hashtable<Socket, String> getNames(){
+		return connectedNames;
+	}
+	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
 		Server server = new Server(1345,"itchy.cs.umu.se");
