@@ -68,7 +68,7 @@ public class GUI implements ActionListener, Runnable{
 		nickQueue = new LinkedList<String> ();
 
 
-		frame = new JFrame("client");
+		frame = new JFrame("Chat");
 		message = new JTextField();
 		
 		chatbox = new JTextArea();

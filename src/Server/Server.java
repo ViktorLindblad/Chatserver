@@ -104,13 +104,13 @@ public class Server implements Runnable{
 	}
 	
 	/**
-	 * Listens after an answer from the name server, uses UTP. 
+	 * Listens after an answer from the name server, uses UDP. 
 	 * 
 	 * Catches IOExceptions and SocketTimeoutExceptions. 
 	 * @return byte[] - The bytes received.
 	 */
 	
-	private byte[] receive() {
+	private synchronized byte[] receive() {
 		buffer = new byte[256];
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
 		
@@ -128,21 +128,35 @@ public class Server implements Runnable{
 	
 	}
 
+	/**
+	 * Tries to send bytes over UDP to the connected name server.
+	 * Also sets a timeout for answer to 5 seconds.
+	 * 
+	 * @param data - The bytes to send.
+	 */
 	private synchronized void send(byte[] data) {
 
-		System.out.println("sending package, length is: "+data.length);
 		DatagramPacket packet = new DatagramPacket(data,data.length,address,1337);
 		try {
 			datagramSocket.send(packet);
-			//datagramSocket.setSoTimeout(5000);
+			datagramSocket.setSoTimeout(5000);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Tries to create a new datagramSocket on the given port.
+	 * 
+	 * @param ip - A string representation of the InetAddress
+	 * @param port - The port to connect the socket to.
+	 * @return true if succeed to create a datagramSocket and 
+	 * 				false else.
+	 */
+	
 	private boolean connect(String ip, int port) {
 	try {
-		datagramSocket = new DatagramSocket(1337);
+		datagramSocket = new DatagramSocket(port);
 		address = InetAddress.getByName(ip);
 		}	catch (SocketException e){
 		e.printStackTrace();
@@ -154,28 +168,39 @@ public class Server implements Runnable{
 		return true;
 	}
 	
+	/**
+	 * Registers the server to the name server.
+	 * Sends a REG PDU with the servers TCP port and it's name.
+	 * 
+	 * @return Integer - the servers ID number. 
+	 */
+	
 	private synchronized int regServer() {
-
+		
 		REG reg = new REG(serverName,TCPport);
 		
 		send(reg.toByteArray());
 		
 		byte [] message = receive();
-
 		
 		if(PDU.byteArrayToLong(message,0,1) == 100){
 			
 			send(reg.toByteArray());
 			message = receive();
 			
-		} else if(PDU.byteArrayToLong(message,0,1) == 1){
 		}
 				
 		return (int)PDU.byteArrayToLong(message, 2,4);//ID number
 		
 	}
 
-	private void hearthBeat() {
+	/**
+	 * Creates a new thread which only sends ALIVE PDU to
+	 * the name server. If the name server answer the ALIVE PDU with
+	 * NOTREG it registers the server again with a REG PDU. 
+	 */
+	
+	private void alive() {
 
 		Thread thread = new Thread(){
 			public void run(){
@@ -199,22 +224,7 @@ public class Server implements Runnable{
 					
 					if(PDU.byteArrayToLong(message, 0, 1)== 100){
 						regServer();
-					} else if(PDU.byteArrayToLong(message, 0, 1)==1){
 					}
-				}
-			}
-		};
-		
-		thread.start();
-	}
-	
-	public void checkMessage() {
-
-		Thread thread = new Thread(){
-			public void run(){
-								
-				while(getRunning()){
-
 				}
 			}
 		};
@@ -224,7 +234,7 @@ public class Server implements Runnable{
 	
 	public void run() {
 
-		hearthBeat();// Starting new thread
+		alive();// Starting new thread
 
 		while(getRunning()) {
 			
@@ -408,18 +418,37 @@ public class Server implements Runnable{
 			}
 		}
 	}
+	
+	/**
+	 * 
+	 * @return running - true if the server is running else false.
+	 */
 
 	public synchronized boolean getRunning(){
 		return running;
 	}
 	
+	/**
+	 * 
+	 * @return Integer - The servers ID.
+	 */
+	
 	public synchronized int getServerId(){
 		return serverId;
 	}
 	
+	/**
+	 * Sets servers ID to the parameter.
+	 * @param id - The servers ID
+	 */
+	
 	public synchronized void setServerId(int id){
 		serverId = id;
 	}
+	
+	/**
+	 * Sending message to the client who sent Corrupt message.
+	 */
 	
 	private void clientSentCorruptMessage(){
 		String errorMessage = "##You have send a corrupt message, goodbye!##";
@@ -427,17 +456,34 @@ public class Server implements Runnable{
 		sendTCPToAll(mess.toByteArray());
 	}
 	
+	/**
+	 * Sending a message to the client who had choosen a to long name.
+	 */
+	
 	private void clientHasToLongName(){
 		String errorMessage = "##Your nickname is to long, goodbye!##";
 		MESS mess = new MESS(errorMessage, serverName, false);
 		sendTCPToAll(mess.toByteArray());
 	}
 	
+	/**
+	 * Checks the messages length.
+	 * 
+	 * @param bytes - The message in bytes.
+	 * @return Boolean - true if message is not to long else false.
+	 */
 	
 	private boolean checkMessageLength(byte[] bytes){
 		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
 		return messageHasLength <= 65535;	
 	}
+	
+	/**
+	 * Checks the name length.
+	 * 
+	 * @param bytes - The name in bytes.
+	 * @return boolean - true if the name is not to long else false.
+	 */
 	
 	private boolean checkNameLength(byte[] bytes){
 
@@ -446,38 +492,22 @@ public class Server implements Runnable{
 		
 	}
 	
+	/**
+	 * Gets the server InettAddress.
+	 * @return InetAddress - Servers InetAddress.
+	 */
+	
 	public InetAddress getAddress(){
 		return server.getInetAddress();
 	}
 	
+	/**
+	 * Gets the servers hash table with sockets and names.  
+	 * @return Hash table - Servers hash table.
+	 */
 	public synchronized Hashtable<Socket, String> getNames(){
 		return connectedNames;
 	}
-	
-	
-	/**
-	 * 	Tries to change the servers port. 
-	 * @param port - the port number it will try to change to.
-	 * @return true if port changed successfully and false if not
-	 */
-	/*
-	public boolean changeServerPort(int port){
-		boolean condition = false;
-		this.port = port;
-		try{
-			ServerSocket server = new ServerSocket(port);
-			socket = server.accept();
-			server.close();
-			condition = true;
-		} catch(SocketException e){
-			System.out.println("Socket");
-			e.printStackTrace();
-		} catch(IOException e ){
-			System.out.println("IO");
-			e.printStackTrace();
-		}
-		return condition;
-	}*/
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){

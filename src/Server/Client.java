@@ -16,6 +16,7 @@ import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 
 import PDU.GETLIST;
 import PDU.JOIN;
@@ -338,7 +339,7 @@ public class Client implements Runnable{
 				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");    
 				Date resultdate = new Date(time);
 				
-				String mess = sdf.format(resultdate)+": "+messname+" said: \n"+message;
+				String mess = sdf.format(resultdate)+": "+messname+" said: "+message;
 				gui.getStringFromClient(mess);
 				
 			break;
@@ -367,7 +368,7 @@ public class Client implements Runnable{
 				}
 				
 				
-				gui.getStringFromClient(name+" Joined chatroom at: " +time);
+				gui.getStringFromClient(name+" joined chatroom at: " +time);
 				
 			break;
 			
@@ -394,7 +395,8 @@ public class Client implements Runnable{
 				if(length%4!=0){
 					length += 4 - (length % 4);
 				}
-				String name2 = PDU.stringReader(bytes, 8+length, secondLength);
+				String name2 = PDU.stringReader
+							(bytes, 8+length, secondLength);
 
 		
 			for(int i = 0; i < nickNames.size(); i++ ){
@@ -403,7 +405,9 @@ public class Client implements Runnable{
 					gui.getNameFromClient(nickNames);
 				}
 			}
-			String changeNick = "Time: "+String.valueOf(time)+"Old nick: "+name+"New nick: "+name2;
+			String changeNick = "Time: "+String.valueOf(time)
+					+"Old nick: "+name+"New nick: "+name2;
+			
 			gui.getStringFromClient(changeNick);
 			
 			
@@ -418,9 +422,12 @@ public class Client implements Runnable{
 					condition = true;
 					name = "";
 					do{
-						byte[] tempbyte = Arrays.copyOfRange(bytes, index, index+1);
-						String character = PDU.bytaArrayToString(tempbyte, 1);
-						System.out.println(character);
+						byte[] tempbyte = Arrays.copyOfRange
+								(bytes, index, index+1);
+						
+						String character = PDU.bytaArrayToString
+								(tempbyte, 1);
+						
 						if(character.equals("\0")){
 							condition = false;
 						} else {
@@ -484,8 +491,8 @@ public class Client implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-
-		GUI client = new GUI(44454);
+		Random random = new Random();
+		GUI client = new GUI(4000+random.nextInt(100));
 		
 		
 		//Client client = new Client(1337,"itchy.cs.umu.se");
