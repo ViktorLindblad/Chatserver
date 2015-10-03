@@ -232,6 +232,14 @@ public class Server implements Runnable{
 		thread.start();
 	}
 	
+	/**
+	 * This method is called when the server thread starts.
+	 * It creates a thread to send ALIVE PDU's and messageHandler
+	 * thread for each client who joins the chat. 
+	 * When a messageHandler has something in it's queue
+	 * the server checks the message and anwser it. 
+	 */
+	
 	public void run() {
 
 		alive();// Starting new thread
@@ -372,6 +380,13 @@ public class Server implements Runnable{
 		}
 	}
 	
+	/**
+	 * Checks if a name already exist in the hash table. 
+	 * 
+	 * @param name - The name to check
+	 * @return true if the name is in the list else false.
+	 */
+	
 	private boolean checkNick(String name) {
 		
 		for(Socket temp : connectedNames.keySet()) {
@@ -383,6 +398,13 @@ public class Server implements Runnable{
 		return false;
 	}
 
+	/**
+	 * Sends a message to the given socket with the given bytes.
+	 * 
+	 * @param temp - The socket. 
+	 * @param bytes - The bytes to send.
+	 */
+	
 	public synchronized void answerSocket(Socket temp, byte[] bytes) {
 			OutputStream DO;
 		try {
@@ -393,6 +415,13 @@ public class Server implements Runnable{
 			e1.printStackTrace();
 		}
 	}
+	
+	/**
+	 * Reads the name from a byte[]. Can only be used with these PDU's:
+	 * JOIN, CHNICK. 
+	 * @param bytes
+	 * @return
+	 */
 
 	private String readNameFromMessage(byte[] bytes) {
 		
@@ -403,6 +432,13 @@ public class Server implements Runnable{
 
 	}
 
+	/**
+	 * Sends a message with the given bytes to all connected 
+	 * clients.
+	 * 
+	 * @param message - The bytes to send.
+	 */
+	
 	public synchronized void sendTCPToAll(byte[] message) {
 		for(Socket temp : connectedClients){
 			
