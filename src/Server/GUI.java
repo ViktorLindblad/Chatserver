@@ -34,6 +34,7 @@ public class GUI implements ActionListener, Runnable{
 	private JButton update;
 	private JButton quit;
 	private JButton changeNick;
+	private JButton clearText;
 	
 	private LinkedList<String> queue;
 	private LinkedList<String> nickQueue;
@@ -77,6 +78,8 @@ public class GUI implements ActionListener, Runnable{
 		button = new JButton("Send message");
 		update = new JButton("Update");
 		connect = new JButton("Connect");
+		clearText = new JButton("Clear");
+
 		
 		quit = new JButton("Quit");
 		changeNick = new JButton("Change nickname");
@@ -96,9 +99,12 @@ public class GUI implements ActionListener, Runnable{
 		
 		panel.add(clients);
 		panel.add(button);
+		
 		panel.add(update);
 		panel.add(connect);
 
+		panel.add(clearText);
+		
 		frame.setSize(620,360);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
@@ -131,9 +137,9 @@ public class GUI implements ActionListener, Runnable{
 		button.setBounds(250,290,150,32);
 		
 		connect.setBounds(50, 290, 150, 32);
-		
 		update.setBounds(450,210,150,32);
 		
+		clearText.setBounds(50, 205, 150, 32);
 		
 		quit.setBounds(450, 290, 150, 32);
 		changeNick.setBounds(450, 250, 150, 32);
@@ -142,7 +148,7 @@ public class GUI implements ActionListener, Runnable{
 		update.addActionListener(this);
 		
 		connect.addActionListener(this);
-		
+		clearText.addActionListener(this);
 
 		quit.addActionListener(this);
 		changeNick.addActionListener(this);
@@ -164,12 +170,18 @@ public class GUI implements ActionListener, Runnable{
 
 	public void actionPerformed(ActionEvent e) {
 		
+		if(e.getSource() == clearText){
+			chatbox.setText(null);
+			chatString = "Text cleared \n";
+			chatbox.setText(chatString);
+		}
+		
 		if(e.getSource() == connect){
 			
 			if(clientconnect) {
-				System.out.println("address: "+address);
-				System.out.println("port: "+port);
-				Client client = new  Client(TCPport,address,this,port);
+
+				//Client client = new  Client(TCPport,address,this,port);
+				Client client = new  Client(TCPport,"itchy.cs.umu.se",this,1337);
 				clientThread = new Thread(client);
 				clientThread.start();
 				clientconnect = false;
@@ -250,7 +262,7 @@ public class GUI implements ActionListener, Runnable{
 
 	public void run() {
 		chatbox.setText("Chose port to connect to and press sendmessage \n");
-		
+		/*
 		boolean condition = true;
 		do{
 			if(!getQueue().isEmpty()){
@@ -267,7 +279,7 @@ public class GUI implements ActionListener, Runnable{
 			}
 		}while(!condition);
 		chatbox.setText("Connect to the nameserver by press connect");
-		
+		*/
 		while(running){
 			String message = "";
 			

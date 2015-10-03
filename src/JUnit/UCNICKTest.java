@@ -29,7 +29,7 @@ public class UCNICKTest {
 	@Before
 	public void setup(){
 		if(isSetUpDone){
-			server = new Server(12,"itchy.cs.umu.se");
+			server = new Server(12,"itchy.cs.umu.se",1337);
 			try {
 				s1 = new Socket(server.getAddress(),12);
 				outStream1 = s1.getOutputStream();

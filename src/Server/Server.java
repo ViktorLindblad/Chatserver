@@ -1,6 +1,5 @@
 package Server;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -10,14 +9,12 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Hashtable;
 
 import PDU.ALIVE;
 import PDU.MESS;
 import PDU.NICKS;
 import PDU.PDU;
-import PDU.QUIT;
 import PDU.REG;
 import PDU.UCNICK;
 import PDU.UJOIN;
@@ -25,9 +22,17 @@ import PDU.ULEAVE;
 
 public class Server implements Runnable{
 	
+	/**
+	 * A server socket, with a thread for connecting clients and one
+	 * sending alive messages to the name server. The server also
+	 * starts a new thread if a client joins which it listens after
+	 * messages from the client. The server also check the message
+	 * and replies/forwards messages.
+	 */
+	
 	private static final int MESS = 10, QUIT = 11, JOIN = 12, CHNICK = 13;
 	
-	private byte[] buffer,alive;
+	private byte[] buffer;
 	private InetAddress address;
 	private ServerConnector connector;
 	private int serverId;
@@ -36,7 +41,6 @@ public class Server implements Runnable{
 	//sockets
 	private DatagramSocket datagramSocket;
 	private ServerSocket server;
-	private Socket socket;
 	
 	//port
 	private int port, TCPport;
@@ -46,28 +50,32 @@ public class Server implements Runnable{
 	private ArrayList<Socket> connectedClients;
 	private ArrayList<MessageHandler> SMH;
 	
-	//input & output
-    private OutputStream outStream;
-    private InputStream inStream;
-	
     //variables 
     private boolean running = true;
-	private boolean noName = false;
 	
-	public Server(int port,String ip){
+    /**
+     * Creates a new server and register itself to the name server, it also
+     * starts a thread which listens after clients to join the server.  
+     * 
+     * @param TCPport - port where the server accepts clients.
+     * @param ip - The address to name server.
+     * @param port - The port to name server.
+     */
+    
+	public Server(int TCPport,String ip, int port){
 
-		this.TCPport = port;
+		this.TCPport = TCPport;
+		this.port = port;
 		serverName = "Lindblad";
 		
 		connectedNames = new Hashtable<Socket,String>();
 		connectedClients = new ArrayList<Socket> ();
 		SMH = new ArrayList<MessageHandler> ();
 		buffer = new byte[256];
-		alive = new byte[256];
 		
 		createTCP();
 		
-		if(!connect(ip,1337)){
+		if(!connect(ip,this.port)){
 			System.out.println("Connection failed");
 		} else {
 			datagramSocket.connect(address, 1337);
@@ -76,7 +84,7 @@ public class Server implements Runnable{
 		setServerId(regServer());
 						
 		connector = 
-				new ServerConnector(server,TCPport,
+				new ServerConnector(server,this.TCPport,
 						server.getInetAddress().getHostName());
 		
 		new Thread(connector).start(); 
@@ -84,34 +92,40 @@ public class Server implements Runnable{
 		new Thread (this).start();
 	}
 	
+	/**
+	 * Tries to create a new server socket on the given TCP-port. 
+	 */
 	private void createTCP(){
-		try {
-			
+		try {		
 			server = new ServerSocket(TCPport);
-
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private synchronized byte[] receive() {
+	/**
+	 * Listens after an answer from the name server, uses UTP. 
+	 * 
+	 * Catches IOExceptions and SocketTimeoutExceptions. 
+	 * @return byte[] - The bytes received.
+	 */
+	
+	private byte[] receive() {
+		buffer = new byte[256];
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
 		
-		while(true){// recieve data until timeout
-	     
-			try {
-				datagramSocket.receive(packet);
-				return packet.getData();
-				
-			} catch (SocketTimeoutException e) {
-				// timeout exception.
-				System.out.println("Timeout reached!!! " + e);
-				datagramSocket.close();
-	     	} catch (IOException e) {
-	        e.printStackTrace();
-	     	}
-	    }
-				
+		try {
+			datagramSocket.receive(packet);
+			
+		} catch (SocketTimeoutException e) {
+			System.out.println("Timeout reached!!! " + e);
+			datagramSocket.close();
+     	} catch (IOException e) {
+     		e.printStackTrace();
+     	}
+		
+		return packet.getData();
+	
 	}
 
 	private synchronized void send(byte[] data) {
@@ -159,30 +173,6 @@ public class Server implements Runnable{
 				
 		return (int)PDU.byteArrayToLong(message, 2,4);//ID number
 		
-	}
-	
-	/**
-	 * 	Tries to change the servers port. 
-	 * @param port - the port number it will try to change to.
-	 * @return true if port changed successfully and false if not
-	 */
-	
-	public boolean changeServerPort(int port){
-		boolean condition = false;
-		this.port = port;
-		try{
-			ServerSocket server = new ServerSocket(port);
-			socket = server.accept();
-			server.close();
-			condition = true;
-		} catch(SocketException e){
-			System.out.println("Socket");
-			e.printStackTrace();
-		} catch(IOException e ){
-			System.out.println("IO");
-			e.printStackTrace();
-		}
-		return condition;
 	}
 
 	private void hearthBeat() {
@@ -464,8 +454,33 @@ public class Server implements Runnable{
 		return connectedNames;
 	}
 	
+	
+	/**
+	 * 	Tries to change the servers port. 
+	 * @param port - the port number it will try to change to.
+	 * @return true if port changed successfully and false if not
+	 */
+	/*
+	public boolean changeServerPort(int port){
+		boolean condition = false;
+		this.port = port;
+		try{
+			ServerSocket server = new ServerSocket(port);
+			socket = server.accept();
+			server.close();
+			condition = true;
+		} catch(SocketException e){
+			System.out.println("Socket");
+			e.printStackTrace();
+		} catch(IOException e ){
+			System.out.println("IO");
+			e.printStackTrace();
+		}
+		return condition;
+	}*/
+	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		Server server = new Server(1345,"itchy.cs.umu.se");
+		Server server = new Server(1345,"itchy.cs.umu.se",1337);
 	}
 }

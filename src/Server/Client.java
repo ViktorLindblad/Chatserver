@@ -1,7 +1,6 @@
 package Server;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,9 +45,7 @@ public class Client implements Runnable{
 	
 	private OutputStream outStream;
 	private InputStream inStream;
-	private DataOutputStream dataOutput;
 	private DataInputStream dataInput;
-	//client is the name we use
 	
 	public Client(int tcpPort,  String ip,GUI gui, int port) {
 
@@ -147,7 +144,9 @@ public class Client implements Runnable{
 	
 	private void infoToClient(){
 		int index = 0;
-
+		gui.getStringFromClient("Sequence number from Slist is: "+
+		sequenceNumber);
+		
 		if(!serverNames.isEmpty()){
 			for(String temp : serverNames){
 				
@@ -155,7 +154,7 @@ public class Client implements Runnable{
 				gui.getStringFromClient("Server number: "+index);
 				index--;
 				
-				gui.getStringFromClient("Server name: "+serverNames.get(index));
+				gui.getStringFromClient("Server name: "+temp);
 				gui.getStringFromClient("Address: "+adresses.get(index));
 				gui.getStringFromClient("Port: "+serverPort.get(index));
 				gui.getStringFromClient("Clients: "+serverClients.get(index)+"\n");
@@ -208,7 +207,6 @@ public class Client implements Runnable{
 			inStream = socket.getInputStream();
 
 			dataInput = new DataInputStream(inStream);
-			dataOutput = new DataOutputStream(outStream);
 			gui.setConnected(true);
 			
 			gui.getStringFromClient("Sending request to join...");
@@ -240,8 +238,8 @@ public class Client implements Runnable{
 	private boolean connect(String ip, int port){
 		try {
 			System.out.println(port);
-			multicastSocket = new MulticastSocket(port);
 			address = InetAddress.getByName(ip);
+			multicastSocket = new MulticastSocket(44444);
 			System.out.println(address);
 		}	catch (SocketException e){
 			e.printStackTrace();
@@ -323,7 +321,6 @@ public class Client implements Runnable{
 		int ca = (int)PDU.byteArrayToLong(bytes, 0, 1);
 		int length;
 		int time;
-		byte[] tempbytes;
 		String name = "";
 		
 		switch(ca){
@@ -333,8 +330,9 @@ public class Client implements Runnable{
 
 				time = (int)PDU.byteArrayToLong(bytes, 8, 12);
 				String message = PDU.stringReader(bytes, 12,length);
-				
-				length += 4 - ( length % 4);
+				if(length % 4 != 0) {
+					length += 4 - ( length % 4);
+				}
 				String messname = PDU.stringReader(bytes, 12+length,nameLength);
 				
 				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");    
@@ -393,9 +391,9 @@ public class Client implements Runnable{
 				time = (int)PDU.byteArrayToLong(bytes, 4, 8);
 				
 				name = PDU.stringReader(bytes, 8, length);
-				
-				length += 4 - (length % 4);
-				
+				if(length%4!=0){
+					length += 4 - (length % 4);
+				}
 				String name2 = PDU.stringReader(bytes, 8+length, secondLength);
 
 		
@@ -486,7 +484,10 @@ public class Client implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		GUI client = new GUI(15);
+
+		GUI client = new GUI(44454);
+		
+		
 		//Client client = new Client(1337,"itchy.cs.umu.se");
 	}
 
