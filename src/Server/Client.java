@@ -61,7 +61,7 @@ public class Client implements Runnable{
 		System.out.println("local "+port);
 		System.out.println("localtcp "+tcpPort);
 		
-		if(!connect(ip,port)){
+		if(!connect(ip)){
 			System.out.println("Connection failed");
 		} else {
 			multicastSocket.connect(address, port);
@@ -175,13 +175,16 @@ public class Client implements Runnable{
 	
 	
 	private void receiveTCP() {
-		int length;
+		long length;
+		byte temp;
 		buffer = null;
 		
 		try {
-			length =(int) dataInput.readByte();
-			buffer = new byte[length];
-			buffer = PDU.readExactly(inStream, length);			
+			temp = dataInput.readByte();
+			length = ((long) temp) & 0xff;
+			
+			buffer = new byte[(int)length];
+			buffer = PDU.readExactly(inStream, (int)length);			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}   
@@ -236,9 +239,8 @@ public class Client implements Runnable{
 		
 	}
 
-	private boolean connect(String ip, int port){
+	private boolean connect(String ip){
 		try {
-			System.out.println(port);
 			address = InetAddress.getByName(ip);
 			multicastSocket = new MulticastSocket(44444);
 			System.out.println(address);
@@ -492,8 +494,7 @@ public class Client implements Runnable{
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
 		Random random = new Random();
-		GUI client = new GUI(4000+random.nextInt(100));
-		
+		GUI client = new GUI(4400+random.nextInt(100));
 		
 		//Client client = new Client(1337,"itchy.cs.umu.se");
 	}

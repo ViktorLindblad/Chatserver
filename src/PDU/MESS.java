@@ -14,15 +14,22 @@ public class MESS extends PDU{
 		byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
 		int lengthMessage = message.getBytes
 									(StandardCharsets.UTF_8).length;
+		int checkLength = 0;
 		if(isClient){
 
 			time = 0;
 			
 			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).padshort()
+					.append((byte)0).pad()
 					.appendShort((short)lengthMessage).pad()
+					.appendInt(0)
 					.append(messageBytes).pad().toByteArray();
-			if(bytes.length>255) {
-				checksum = bytes.length - 255;
+			
+			checkLength = bytes.length;
+
+			while(checkLength>255){
+				checkLength -= 255;
+				checksum = checkLength;	
 			}
 			bytes = null;
 			
@@ -42,9 +49,14 @@ public class MESS extends PDU{
 					.append(name.getBytes(StandardCharsets.UTF_8))
 					.pad().toByteArray();
 			
-			if(bytes.length>255) {
-				checksum = bytes.length - 255;
-			}		
+			checkLength = bytes.length;
+
+			while(checkLength>255){
+				checkLength -= 255;
+				checksum = checkLength;	
+			}
+				
+		
 			bytes = null;
 			
 			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).padshort()

@@ -16,7 +16,7 @@ import PDU.JOIN;
 import PDU.PDU;
 import Server.Server;
 
-public class UCNICKTest {
+public class ServerTest {
 	
 	private static boolean isSetUpDone = false;
 	private static Socket s1,s2;

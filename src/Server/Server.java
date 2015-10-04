@@ -15,6 +15,7 @@ import PDU.ALIVE;
 import PDU.MESS;
 import PDU.NICKS;
 import PDU.PDU;
+import PDU.QUIT;
 import PDU.REG;
 import PDU.UCNICK;
 import PDU.UJOIN;
@@ -74,18 +75,17 @@ public class Server implements Runnable{
 		buffer = new byte[256];
 		
 		createTCP();
-		
-		if(!connect(ip,this.port)){
+		if(!connect(ip)){
 			System.out.println("Connection failed");
 		} else {
-			datagramSocket.connect(address, 1337);
+			System.out.println(address);
+			datagramSocket.connect(address, this.port);
 		}
 		
 		setServerId(regServer());
 						
 		connector = 
-				new ServerConnector(server,this.TCPport,
-						server.getInetAddress().getHostName());
+				new ServerConnector(server);
 		
 		new Thread(connector).start(); 
 		
@@ -113,18 +113,18 @@ public class Server implements Runnable{
 	private synchronized byte[] receive() {
 		buffer = new byte[256];
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
+		while(true){
+			try {
+				datagramSocket.receive(packet);
+				return packet.getData();
+			} catch (SocketTimeoutException e) {
+				System.out.println("Timeout reached!!! " + e);
+				datagramSocket.close();
+	     	} catch (IOException e) {
+	     		e.printStackTrace();
+	     	}
+		}
 		
-		try {
-			datagramSocket.receive(packet);
-			
-		} catch (SocketTimeoutException e) {
-			System.out.println("Timeout reached!!! " + e);
-			datagramSocket.close();
-     	} catch (IOException e) {
-     		e.printStackTrace();
-     	}
-		
-		return packet.getData();
 	
 	}
 
@@ -136,10 +136,11 @@ public class Server implements Runnable{
 	 */
 	private synchronized void send(byte[] data) {
 
-		DatagramPacket packet = new DatagramPacket(data,data.length,address,1337);
+		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
 		try {
 			datagramSocket.send(packet);
 			datagramSocket.setSoTimeout(5000);
+			System.out.println("message sent");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -154,7 +155,7 @@ public class Server implements Runnable{
 	 * 				false else.
 	 */
 	
-	private boolean connect(String ip, int port) {
+	private boolean connect(String ip) {
 	try {
 		datagramSocket = new DatagramSocket(port);
 		address = InetAddress.getByName(ip);
@@ -178,17 +179,18 @@ public class Server implements Runnable{
 	private synchronized int regServer() {
 		
 		REG reg = new REG(serverName,TCPport);
-		
+		System.out.println("sending reg");
 		send(reg.toByteArray());
 		
 		byte [] message = receive();
 		
 		if(PDU.byteArrayToLong(message,0,1) == 100){
-			
+			System.out.println("not regged");
 			send(reg.toByteArray());
 			message = receive();
 			
 		}
+		System.out.println("regged");
 				
 		return (int)PDU.byteArrayToLong(message, 2,4);//ID number
 		
@@ -272,7 +274,6 @@ public class Server implements Runnable{
 								System.out.println(buffer[i]);
 							}
 							if(checkMessageLength(buffer)){
-								temp.setReceivedCorrectMessage(true);
 								int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
 								String message = PDU.stringReader(buffer, 8,messageLength);
 							
@@ -285,11 +286,10 @@ public class Server implements Runnable{
 								connectedClients.remove(temp.getSocket());
 								connectedNames.remove(temp.getSocket());
 								sendTCPToAll(leave.toByteArray());
-								temp.setReceivedCorrectMessage(false);
+								//Answer socket with mess
 							}
 						break;
 						case(QUIT)://QUIT
-							temp.setReceivedCorrectMessage(false);
 							ULEAVE leave = new ULEAVE(messageName);
 							connectedClients.remove(temp.getSocket());
 							connectedNames.remove(temp.getSocket());
@@ -301,7 +301,6 @@ public class Server implements Runnable{
 							String name = readNameFromMessage(buffer);
 							
 							if(checkNameLength(buffer)) {
-								temp.setReceivedCorrectMessage(true);
 								if( checkNick(name)) {
 									ByteSequenceBuilder BSB = 
 											new ByteSequenceBuilder();
@@ -313,7 +312,6 @@ public class Server implements Runnable{
 									
 									answerSocket(temp.getSocket(),occupied);
 								} else {
-									temp.setReceivedCorrectMessage(true);
 									connectedNames.put(temp.getSocket(),name);
 									NICKS nick = 
 											new NICKS(connectedNames);
@@ -333,7 +331,7 @@ public class Server implements Runnable{
 								connectedNames.remove(temp.getSocket());
 								
 								sendTCPToAll(uleave.toByteArray());
-								temp.setReceivedCorrectMessage(false);
+								//answer socket with mess
 							}
 							
 						break;
@@ -341,7 +339,6 @@ public class Server implements Runnable{
 							String newName = readNameFromMessage(buffer);
 							if(checkNameLength(buffer)) {
 								if(checkNick(newName)){
-									temp.setReceivedCorrectMessage(true);
 									ByteSequenceBuilder BSB = 
 											new ByteSequenceBuilder();
 									
@@ -353,7 +350,6 @@ public class Server implements Runnable{
 									answerSocket(temp.getSocket(),occupied);
 								
 								} else {
-									temp.setReceivedCorrectMessage(true);
 									UCNICK cnick = new UCNICK(messageName,newName);
 									System.out.println("sending UCNICK");
 									sendTCPToAll(cnick.toByteArray());
@@ -368,11 +364,11 @@ public class Server implements Runnable{
 								connectedNames.remove(temp.getSocket());
 								
 								sendTCPToAll(uleave.toByteArray());
-								temp.setReceivedCorrectMessage(false);
+								//answer socket with 
 							}
 						break;
 						default:
-							temp.setReceivedCorrectMessage(false);
+								QUIT quit = new QUIT();
 						break;
 					}
 				}
@@ -547,6 +543,6 @@ public class Server implements Runnable{
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
-		Server server = new Server(1345,"itchy.cs.umu.se",1337);
+		Server server = new Server(1365,"itchy.cs.umu.se",1337);
 	}
 }

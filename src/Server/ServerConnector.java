@@ -12,18 +12,13 @@ public class ServerConnector implements Runnable {
 	private ServerSocket server;
 	private LinkedList<Socket> queue;
 	private boolean running;
+
 	
-	private int port;
-	private SecurityManager securityManager;
-	private String hostname;
-	
-	public ServerConnector(ServerSocket server,int port, String hostname){
+	public ServerConnector(ServerSocket server){
 		queue = new LinkedList<Socket>();
 		this.server = server;
 		running = true;
-		this.port = port;
-		this.hostname = hostname;
-		securityManager = new SecurityManager();
+
 	}
 	
 	public void run(){

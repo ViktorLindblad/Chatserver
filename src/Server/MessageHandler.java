@@ -14,25 +14,48 @@ public class MessageHandler implements Runnable {
 	private DataInputStream dataInput;
 	private boolean running;
 	private Thread thread;
-	private boolean correct;
+	private byte[] buffer;
 	
 	public MessageHandler(Socket socket){
-		correct = true;
 		this.socket = socket;
 		messageQueue = new LinkedList <byte[]>();
 		running = true;
+		
+		try{
+			inStream = socket.getInputStream();
+			dataInput = new DataInputStream(inStream);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		thread = new Thread(this);
 		thread.start();
+		
+		
 	}
 
 	public void run() {
 
 		while(running){
 
-			if(!receivedCorrectMessage()){
+			long length;
+			byte temp;
+			System.out.println("message Queue running");
+			try {
+				buffer = null;
 				
-
-	        	try {
+				temp = dataInput.readByte();
+				length = ((long) temp) & 0xff;
+				
+				
+				buffer = new byte[(int)length];
+				buffer = PDU.readExactly(inStream, (int)length);
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			if(PDU.byteArrayToLong(buffer, 0, 1)==11){
+				try {
 	                dataInput.close();
 	            } catch (IOException e) {
 	            	e.printStackTrace();
@@ -47,31 +70,12 @@ public class MessageHandler implements Runnable {
 	    		} catch (IOException e) {
 	    			e.printStackTrace();
 	    		}
+				messageQueue.add(buffer);
 	    		try {
 					thread.join();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-	        }
-		
-			
-			try{
-				inStream = socket.getInputStream();
-				dataInput = new DataInputStream(inStream);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-	
-			int length;
-			byte [] buffer = null;
-			
-			try {
-				length = dataInput.read();
-				buffer = new byte[length];
-				buffer = PDU.readExactly(inStream, length);
-				
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
 							     
 			messageQueue.add(buffer);
@@ -82,14 +86,6 @@ public class MessageHandler implements Runnable {
 	
 	public synchronized void notifyThread(){
 		thread.notify();
-	}
-	
-	private synchronized boolean receivedCorrectMessage() {
-		return correct;
-	}
-	
-	public synchronized void setReceivedCorrectMessage(boolean condition) {
-		correct  = condition;
 	}
 	
 	public synchronized void setMessageRunning(boolean bool){
