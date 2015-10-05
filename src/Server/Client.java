@@ -22,57 +22,72 @@ import PDU.GETLIST;
 import PDU.JOIN;
 import PDU.PDU;
 
-public class Client implements Runnable{
+public class Client implements Runnable {
 	
-	private static final int MESS = 10, QUIT = 11, UJOIN = 16, ULEAVE = 17,
-							UCNICK = 18, NICKS = 19, NICKO = 20; 
+	//Constants for OpCodes
+	private static final int MESS = 10, QUIT = 11, UJOIN = 16, 
+							ULEAVE = 17, UCNICK = 18, NICKS = 19;
 	
-	private MulticastSocket multicastSocket;
-	private Socket socket;
+	//Sockets
+	private MulticastSocket multicastSocket;//UTP socket
+	private Socket socket;//TCP socket
 	
+	//Lists
+	//A list with all server names.
 	private ArrayList<String> serverNames;
+	//A list with all server ports.
 	private ArrayList<Integer> serverPort;
+	//A list with all server addresses.
 	private ArrayList<Inet4Address> adresses;
+	//A list with number of clients in a server.
 	private ArrayList<Integer> serverClients;
+	//A list with nick names online at the connected server.
 	private ArrayList<String> nickNames;
-	
-	private int port, tcpPort, sequenceNumber, servers;
-	private InetAddress address;
-	private GUI gui;
-	private String name = "";
-	private byte[] buffer;
-
-	private boolean running ;
 	
 	private OutputStream outStream;
 	private InputStream inStream;
 	private DataInputStream dataInput;
 	
-	public Client(int tcpPort,  String ip,GUI gui, int port) {
+	private int port, sequenceNumber, servers;
+	private InetAddress address;
+	private GUI gui;
+	private String name = "";
+	private byte[] buffer;
+	private boolean running;
+	
+	/**
+	 * Creates a new Client.
+	 * 
+	 * @param ip - String representation of to the address to server.
+	 * @param gui - The gui to this client.
+	 * @param port - The UTP port to the name server.
+	 */
+	
+	public Client(String ip, GUI gui, int port) {
 
 		this.port = port;
-		this.tcpPort = tcpPort;
 		buffer = new byte[256];
 		this.gui = gui;
 		servers = 0;		
 		
-		System.out.println("port: "+this.port);
-		System.out.println("TCPport"+this.tcpPort);
-		System.out.println("local "+port);
-		System.out.println("localtcp "+tcpPort);
-		
-		if(!connect(ip)){
+		if(!connect(ip)) {
 			System.out.println("Connection failed");
 		} else {
 			multicastSocket.connect(address, port);
 		}
+		
 		getlist();	
 
 		infoToClient();
 		running = true;
 	}
 	
-	private void getlist(){
+	/**
+	 * Sends GETLIST PDU to the name server and receives the answer.
+	 * It also checks the message and save information into the lists. 
+	 */
+	
+	private void getlist() {
 		byte[] message;
 		
 		serverNames = new ArrayList<String>();
@@ -86,7 +101,7 @@ public class Client implements Runnable{
 		send(getList.toByteArray());
 		message = receive();
 
-		if(PDU.byteArrayToLong(message,0,1) == 4){
+		if(PDU.byteArrayToLong(message,0,1) == 4) {
 			
 			sequenceNumber = (int)PDU.byteArrayToLong(message,1,2);
 			servers = (int)PDU.byteArrayToLong(message,2,4);
@@ -95,47 +110,55 @@ public class Client implements Runnable{
 			int tempint;
 			byte[] tempbytes;
 			
-			for(int i = 0; i < servers; i++){
+			for(int i = 0; i < servers; i++) {
 				tempbytes = null;
-				tempbytes = Arrays.copyOfRange(message,byteIndex, byteIndex+4);
+				tempbytes = Arrays.copyOfRange(message,byteIndex,
+													byteIndex+4);
 
 				byteIndex +=4;
 
 				try {
-					adresses.add((Inet4Address)Inet4Address.getByAddress(tempbytes));
+					adresses.add((Inet4Address)Inet4Address
+									.getByAddress(tempbytes));
 				} catch (UnknownHostException e) {
 					e.printStackTrace();
 				}
 				
-				tempint = (int)PDU.byteArrayToLong(message,byteIndex,byteIndex+2);
+				tempint = (int)PDU.byteArrayToLong(message,
+											byteIndex,byteIndex+2);
 
 				byteIndex += 2;
 				serverPort.add(tempint);
 				
-				tempint =  (int)PDU.byteArrayToLong(message,byteIndex,byteIndex+1);
+				tempint =  (int)PDU.byteArrayToLong(message,
+											byteIndex,byteIndex+1);
 
 				byteIndex += 1;
 				serverClients.add(tempint);
 				
-				tempint = (int)PDU.byteArrayToLong(message,byteIndex,byteIndex+1);
+				tempint = (int)PDU.byteArrayToLong(message,
+											byteIndex,byteIndex+1);
 
 				byteIndex += 1;
 				
 				tempbytes = null;
-				tempbytes = Arrays.copyOfRange(message,byteIndex, byteIndex+tempint);
-				String server = PDU.bytaArrayToString(tempbytes,tempint);
+				tempbytes = Arrays.copyOfRange(message,
+											byteIndex, byteIndex+tempint);
+				
+				String server = PDU.bytaArrayToString
+											(tempbytes,tempint);
 				serverNames.add(server);
 
-				if(tempint%4==0){
+				if(tempint%4==0) {
 					byteIndex += tempint;
 					
-				} else if(tempint%4==1){
+				} else if(tempint%4==1) {
 					byteIndex += tempint+3;
 			
-				} else if(tempint%4==2){
+				} else if(tempint%4==2) {
 					byteIndex += tempint+2;
 				
-				} else if(tempint%4==3){
+				} else if(tempint%4==3) {
 					byteIndex += tempint+1;
 				
 				}
@@ -143,13 +166,17 @@ public class Client implements Runnable{
 		}
 	}
 	
-	private void infoToClient(){
+	/**
+	 * Prints out information given from SLIST to the GUI.
+	 */
+	
+	private void infoToClient() {
 		int index = 0;
 		gui.getStringFromClient("Sequence number from Slist is: "+
 		sequenceNumber);
 		
-		if(!serverNames.isEmpty()){
-			for(String temp : serverNames){
+		if(!serverNames.isEmpty()) {
+			for(String temp : serverNames) {
 				
 				index++;
 				gui.getStringFromClient("Server number: "+index);
@@ -158,21 +185,26 @@ public class Client implements Runnable{
 				gui.getStringFromClient("Server name: "+temp);
 				gui.getStringFromClient("Address: "+adresses.get(index));
 				gui.getStringFromClient("Port: "+serverPort.get(index));
-				gui.getStringFromClient("Clients: "+serverClients.get(index)+"\n");
+				gui.getStringFromClient
+								("Clients: "+serverClients.get(index)
+														+"\n");
 				index++;
 				
 			}
-		} else{
+		} else {
 			gui.getStringFromClient("No servers at this time");
 
 		}
 		
-		gui.getStringFromClient("Please choose server to start chatting or update: \n");
+		gui.getStringFromClient
+			("Please choose server to start chatting or update: \n");
 		
 	}
 	
-
-	
+	/**
+	 * Listens after messages from the server.
+	 * The message is saved into the buffer field which is a byte[]. 
+	 */
 	
 	private void receiveTCP() {
 		long length;
@@ -190,6 +222,11 @@ public class Client implements Runnable{
 		}   
 	}
 	
+	/**
+	 * Sends a message over TCP.
+	 * @param bytes - The message to send in bytes.
+	 */
+	
 	private void sendTCP(byte[] bytes) {
 		
 		try {
@@ -200,6 +237,17 @@ public class Client implements Runnable{
 		}
 		
 	}
+	
+	/**
+	 * Connect the clients socket to the server with the given
+	 * port and Inet4Address.
+	 * 
+	 * @param tcpPort - The port to the server.
+	 * @param ip - The address to the server.
+	 * 
+	 * @return  boolean - True if the client succeed to connect to the
+	 * server else false.
+	 */
 	
 	private boolean connectToTCP(int tcpPort,Inet4Address ip) {
 
@@ -215,7 +263,7 @@ public class Client implements Runnable{
 			
 			gui.getStringFromClient("Sending request to join...");
 			
-		} catch(IOException e){
+		} catch(IOException e) {
 			e.printStackTrace();
 		}
 		
@@ -224,7 +272,8 @@ public class Client implements Runnable{
 		sendTCP(join.toByteArray());
 
 		receiveTCP();
-		if(PDU.byteArrayToLong(buffer, 0, 1)==20){
+		if(PDU.byteArrayToLong(buffer, 0, 1)==10) {
+			checkMessage(buffer);
 			try {
 				socket.close();
 			} catch (IOException e) {
@@ -238,13 +287,21 @@ public class Client implements Runnable{
 		}
 		
 	}
+	
+	/**
+	 * Connect to the name server with the given IP address 
+	 * and creates a new multicastSocket with the field port.
+	 * @param ip - The String representation of the address.
+	 * 
+	 * @return boolean - True if it succeed else false.
+	 */
 
-	private boolean connect(String ip){
+	private boolean connect(String ip) {
 		try {
 			address = InetAddress.getByName(ip);
-			multicastSocket = new MulticastSocket(44444);
+			multicastSocket = new MulticastSocket(port);
 			System.out.println(address);
-		}	catch (SocketException e){
+		}	catch (SocketException e) {
 			e.printStackTrace();
 			return false;
 		}	catch (IOException e) {
@@ -254,27 +311,38 @@ public class Client implements Runnable{
 		return true;
 	}
 	
-	private byte[] receive(){
+	/**
+	 * Listens after messages in UTP from the name server.
+	 * 
+	 * @return byte[] - The message in bytes.
+	 */
+	
+	private byte[] receive() {
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
-	while(true){
-		try{
-			
-			multicastSocket.receive(packet);
-			return packet.getData();
-			
-		} catch (SocketTimeoutException e){
-			System.out.println("Time out reached!");
-			e.printStackTrace();
-		} catch (IOException e){
-			e.printStackTrace();
-		}
-	}
-
-		
+		while(true) {
+			try {
+				
+				multicastSocket.receive(packet);
+				return packet.getData();
+				
+			} catch (SocketTimeoutException e) {
+				System.out.println("Time out reached!");
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}	
 	}
 	
-	private void send(byte[] data){
-		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
+	/**
+	 * Sends a message over UTP.
+	 * 
+	 * @param data - The message to send in bytes.
+	 */
+	
+	private void send(byte[] data) {
+		DatagramPacket packet = new DatagramPacket
+										(data,data.length,address,port);
 		try {
 			multicastSocket.send(packet);
 			multicastSocket.setSoTimeout(5000);
@@ -283,12 +351,19 @@ public class Client implements Runnable{
 		}
 	}
 	
+	/**
+	 * This method is called when the client thread starts.
+	 * It will try to connect to a name server and when it
+	 * is connected to a server it will only listens after messages
+	 * from the server and check the message.
+	 */
+	
 	public void run() {
 		String message;
 		int server=0;
 
 		
-		while(running){
+		while(running) {
 		
 			if(gui.getUpdate()) {
 				getlist();
@@ -298,10 +373,11 @@ public class Client implements Runnable{
 
 			if(!gui.getQueue().isEmpty()) {
 				message = gui.getQueue().removeFirst();
-				if(message != ""){
+				if(message != "") {
 					server = Integer.parseInt(message);
 				}
 			}
+			
 			if(server != 0 && server <= serverNames.size() ) {
 				do {
 					chooseNickName();
@@ -320,34 +396,53 @@ public class Client implements Runnable{
 		}
 	}
 	
-	private void checkMessage(byte[] bytes){
+	/**
+	 * Check the received message from the server.
+	 * It will check which kind of message it is and act after that.
+	 * 
+	 * @param bytes - The message to check in bytes.
+	 */
+	
+	private void checkMessage(byte[] bytes) {
 		int ca = (int)PDU.byteArrayToLong(bytes, 0, 1);
 		int length;
 		int time;
 		String name = "";
 		
-		switch(ca){
+		switch(ca) {
 			case(MESS):
+				String messname;
 				int nameLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
 				length = (int)PDU.byteArrayToLong(bytes, 4, 6);
 
 				time = (int)PDU.byteArrayToLong(bytes, 8, 12);
 				String message = PDU.stringReader(bytes, 12,length);
+				
 				if(length % 4 != 0) {
 					length += 4 - ( length % 4);
 				}
-				String messname = PDU.stringReader(bytes, 12+length,nameLength);
 				
-				SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");    
+				if(nameLength == 0){
+					messname = "Server";
+				} else {
+					 messname = PDU.stringReader
+							 		(bytes, 12+length,nameLength);
+				}
+				
+				SimpleDateFormat sdf = new 
+									SimpleDateFormat("MMM dd,yyyy HH:mm");    
 				Date resultdate = new Date(time);
 				
-				String mess = sdf.format(resultdate)+": "+messname+" said: "+message;
+				
+				
+				String mess = sdf.format(resultdate)+": "
+											+messname+" said: "+message;
 				gui.getStringFromClient(mess);
 				
 			break;
 			
 			case(QUIT):
-				gui.getStringFromClient("Server shutdown!");
+				closeClientsSocket();
 				
 			break;
 			
@@ -370,7 +465,8 @@ public class Client implements Runnable{
 				}
 				
 				
-				gui.getStringFromClient(name+" joined chatroom at: " +time);
+				gui.getStringFromClient(name+" joined chatroom at: " 
+															+time);
 				
 			break;
 			
@@ -394,9 +490,11 @@ public class Client implements Runnable{
 				time = (int)PDU.byteArrayToLong(bytes, 4, 8);
 				
 				name = PDU.stringReader(bytes, 8, length);
+				
 				if(length%4!=0){
 					length += 4 - (length % 4);
 				}
+				
 				String name2 = PDU.stringReader
 							(bytes, 8+length, secondLength);
 
@@ -457,16 +555,47 @@ public class Client implements Runnable{
 
 			break;
 			
-			case(NICKO):
-				gui.getStringFromClient("Nickname occupied! Please try again \n");
-			break;
-			
 			default:
 			break;
 		}
 	}
 	
-	public boolean isNumber(Object o){
+	/**
+	 * Closes the clients socket, outputStream, dataInput and
+	 * inputStream.
+	 */
+	
+	private void closeClientsSocket() {
+		try {
+			outStream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			dataInput.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			inStream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Checks if the given object is a number.
+	 * 
+	 * @param o - The object
+	 * @return
+	 */
+	
+	private boolean isNumber(Object o){
 	        boolean isNumber = true;
 
 	        for( byte b : o.toString().getBytes() ){

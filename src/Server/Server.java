@@ -10,6 +10,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.LinkedList;
 
 import PDU.ALIVE;
 import PDU.MESS;
@@ -30,30 +31,35 @@ public class Server implements Runnable{
 	 * messages from the client. The server also check the message
 	 * and replies/forwards messages.
 	 */
-	
+	//Constants for OpCodes.
 	private static final int MESS = 10, QUIT = 11, JOIN = 12, CHNICK = 13;
 	
 	private byte[] buffer;
+	
+	//Sockets
+	private DatagramSocket datagramSocket;//UTP socket
+	private ServerSocket server;//TCP socket
+	
+	//Ports
+	private int port, TCPport;
+	
+	//Lists
+	
+	//Uses to get the name of a socket.
+	private Hashtable<Socket,String>  connectedNames;
+	//A list with all connected sockets.
+	private ArrayList<Socket> connectedClients;
+	//A list with all MessageHandlers.
+	private ArrayList<MessageHandler> SMH;
+	//A queue which is only used to remove MessageHandlers from SMH list.
+	private LinkedList <MessageHandler> removeQueue; 
+	
+    //Variables 
+    private boolean running = true;
 	private InetAddress address;
 	private ServerConnector connector;
 	private int serverId;
 	private String serverName, messageName;
-	
-	//sockets
-	private DatagramSocket datagramSocket;
-	private ServerSocket server;
-	
-	//port
-	private int port, TCPport;
-	
-	//Lists
-	private Hashtable<Socket,String>  connectedNames;
-	private ArrayList<Socket> connectedClients;
-	private ArrayList<MessageHandler> SMH;
-	
-    //variables 
-    private boolean running = true;
-	
     /**
      * Creates a new server and register itself to the name server, it also
      * starts a thread which listens after clients to join the server.  
@@ -72,6 +78,8 @@ public class Server implements Runnable{
 		connectedNames = new Hashtable<Socket,String>();
 		connectedClients = new ArrayList<Socket> ();
 		SMH = new ArrayList<MessageHandler> ();
+		
+		removeQueue = new LinkedList<MessageHandler>();
 		buffer = new byte[256];
 		
 		createTCP();
@@ -124,8 +132,6 @@ public class Server implements Runnable{
 	     		e.printStackTrace();
 	     	}
 		}
-		
-	
 	}
 
 	/**
@@ -179,7 +185,6 @@ public class Server implements Runnable{
 	private synchronized int regServer() {
 		
 		REG reg = new REG(serverName,TCPport);
-		System.out.println("sending reg");
 		send(reg.toByteArray());
 		
 		byte [] message = receive();
@@ -239,7 +244,7 @@ public class Server implements Runnable{
 	 * It creates a thread to send ALIVE PDU's and messageHandler
 	 * thread for each client who joins the chat. 
 	 * When a messageHandler has something in it's queue
-	 * the server checks the message and anwser it. 
+	 * the server checks the message and answer it. 
 	 */
 	
 	public void run() {
@@ -263,6 +268,8 @@ public class Server implements Runnable{
 
 					buffer = temp.getMessageQueue().remove();
 					
+					int messageHasLength;
+					
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
 					if(ca!=12) {
 						messageName = connectedNames.get(temp.getSocket());
@@ -270,9 +277,7 @@ public class Server implements Runnable{
 					
 					switch(ca) {
 						case(MESS)://MESS
-							for(int i=0; i<buffer.length; i++){
-								System.out.println(buffer[i]);
-							}
+
 							if(checkMessageLength(buffer)){
 								int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
 								String message = PDU.stringReader(buffer, 8,messageLength);
@@ -280,21 +285,26 @@ public class Server implements Runnable{
 								MESS mess = new MESS(message, messageName, false);						
 								sendTCPToAll(mess.toByteArray());
 							} else {
-								clientSentCorruptMessage();
+								clientSentCorruptMessage(temp.getSocket());
 								ULEAVE leave = new ULEAVE(messageName);
 								
 								connectedClients.remove(temp.getSocket());
 								connectedNames.remove(temp.getSocket());
+								removeQueue.add(temp);
 								sendTCPToAll(leave.toByteArray());
-								//Answer socket with mess
+								QUIT quit = new QUIT();
+								answerSocket(temp.getSocket(),quit.toByteArray());
 							}
 						break;
 						case(QUIT)://QUIT
 							ULEAVE leave = new ULEAVE(messageName);
 							connectedClients.remove(temp.getSocket());
 							connectedNames.remove(temp.getSocket());
-							
+							removeQueue.add(temp);
 							sendTCPToAll(leave.toByteArray());
+							
+							
+							
 							
 						break;
 						case(JOIN)://JOIN
@@ -302,15 +312,11 @@ public class Server implements Runnable{
 							
 							if(checkNameLength(buffer)) {
 								if( checkNick(name)) {
-									ByteSequenceBuilder BSB = 
-											new ByteSequenceBuilder();
+
+									nickNameOccupied(temp.getSocket());
+									connectedClients.remove(temp.getSocket());
+									removeQueue.add(temp);
 									
-									byte[] occupied = 
-											BSB.append(OpCode.NICKO.value)
-											.pad()
-											.toByteArray();
-									
-									answerSocket(temp.getSocket(),occupied);
 								} else {
 									connectedNames.put(temp.getSocket(),name);
 									NICKS nick = 
@@ -324,14 +330,23 @@ public class Server implements Runnable{
 								}
 								
 							} else {
-								clientHasToLongName();
-								ULEAVE uleave = new ULEAVE(messageName);
-								
-								connectedClients.remove(temp.getSocket());
-								connectedNames.remove(temp.getSocket());
-								
-								sendTCPToAll(uleave.toByteArray());
-								//answer socket with mess
+								messageHasLength = 
+										(int)PDU.byteArrayToLong(buffer, 1, 2);
+								if(messageHasLength == 0){
+									nickNameIsZero(temp.getSocket());
+									connectedClients.remove(temp.getSocket());
+									removeQueue.add(temp);
+								} else {
+							
+									clientHasToLongName(temp.getSocket());
+									ULEAVE uleave = new ULEAVE(messageName);
+									
+									connectedClients.remove(temp.getSocket());
+									connectedNames.remove(temp.getSocket());
+									sendTCPToAll(uleave.toByteArray());
+									QUIT quit = new QUIT();
+									answerSocket(temp.getSocket(),quit.toByteArray());
+								}
 							}
 							
 						break;
@@ -339,39 +354,47 @@ public class Server implements Runnable{
 							String newName = readNameFromMessage(buffer);
 							if(checkNameLength(buffer)) {
 								if(checkNick(newName)){
-									ByteSequenceBuilder BSB = 
-											new ByteSequenceBuilder();
 									
-									byte[] occupied = 
-											BSB.append(OpCode.NICKO.value)
-											.pad()
-											.toByteArray();
-									
-									answerSocket(temp.getSocket(),occupied);
+									nickNameOccupied(temp.getSocket());
 								
 								} else {
 									UCNICK cnick = new UCNICK(messageName,newName);
-									System.out.println("sending UCNICK");
 									sendTCPToAll(cnick.toByteArray());
 									
 									connectedNames.put(temp.getSocket(), newName);
 								}
 							} else {
-								clientHasToLongName();
-								ULEAVE uleave = new ULEAVE(messageName);
-								
-								connectedClients.remove(temp.getSocket());
-								connectedNames.remove(temp.getSocket());
-								
-								sendTCPToAll(uleave.toByteArray());
-								//answer socket with 
+								messageHasLength = 
+										(int)PDU.byteArrayToLong(buffer, 1, 2);
+								if(messageHasLength == 0){
+									nickNameIsZero(temp.getSocket());
+								} else {
+									clientHasToLongName(temp.getSocket());
+									ULEAVE uleave = new ULEAVE(messageName);
+									
+									connectedClients.remove(temp.getSocket());
+									connectedNames.remove(temp.getSocket());
+									
+									sendTCPToAll(uleave.toByteArray());
+									QUIT quit = new QUIT();
+									answerSocket(temp.getSocket(),quit.toByteArray());
+								}
 							}
 						break;
 						default:
-								QUIT quit = new QUIT();
+							QUIT quit = new QUIT();
+							answerSocket(temp.getSocket(),quit.toByteArray());
+							ULEAVE dleave = new ULEAVE(messageName);
+							connectedClients.remove(temp.getSocket());
+							connectedNames.remove(temp.getSocket());
+							removeQueue.add(temp);
+							sendTCPToAll(dleave.toByteArray());
 						break;
 					}
 				}
+			}
+			while(!removeQueue.isEmpty()){
+				SMH.remove(removeQueue.removeFirst());
 			}
 		}
 	}
@@ -482,24 +505,46 @@ public class Server implements Runnable{
 	 * Sending message to the client who sent Corrupt message.
 	 */
 	
-	private void clientSentCorruptMessage(){
-		String errorMessage = "##You have send a corrupt message, goodbye!##";
-		MESS mess = new MESS(errorMessage, serverName, false);
-		sendTCPToAll(mess.toByteArray());
+	private void clientSentCorruptMessage(Socket socket){
+		String errorMessage = "You have send a corrupt message, goodbye!";
+		MESS mess = new MESS(errorMessage, "", false);
+		answerSocket(socket,mess.toByteArray());
 	}
 	
 	/**
-	 * Sending a message to the client who had choosen a to long name.
+	 * Sending a message to the client who had chosen a to long name.
 	 */
 	
-	private void clientHasToLongName(){
-		String errorMessage = "##Your nickname is to long, goodbye!##";
-		MESS mess = new MESS(errorMessage, serverName, false);
-		sendTCPToAll(mess.toByteArray());
+	private void clientHasToLongName(Socket socket){
+		String errorMessage = "Your nickname is to long, goodbye!";
+		MESS mess = new MESS(errorMessage, "", false);
+		answerSocket(socket,mess.toByteArray());
+	}
+	
+	/**
+	 * Sending a message to the client if the nickname is occupied 
+	 */
+	
+	private void nickNameOccupied(Socket socket){
+		String errorMessage = "Your nickname is occupied!";
+		MESS mess = new MESS(errorMessage, "", false);
+		answerSocket(socket,mess.toByteArray());
+	}
+	
+	/**
+	 * Sending a message to the client if the nickname has zero length.
+	 */
+	
+	private void nickNameIsZero(Socket socket){
+		String errorMessage = "You can't have a nickname with zero length!\n"
+				+ "Try a different name.";
+		MESS mess = new MESS(errorMessage, "", false);
+		answerSocket(socket,mess.toByteArray());
 	}
 	
 	/**
 	 * Checks the messages length.
+	 * Only works with MESS PDU
 	 * 
 	 * @param bytes - The message in bytes.
 	 * @return Boolean - true if message is not to long else false.
@@ -512,6 +557,7 @@ public class Server implements Runnable{
 	
 	/**
 	 * Checks the name length.
+	 * Only works with JOIN and CHNICK PDU.
 	 * 
 	 * @param bytes - The name in bytes.
 	 * @return boolean - true if the name is not to long else false.
@@ -520,7 +566,7 @@ public class Server implements Runnable{
 	private boolean checkNameLength(byte[] bytes){
 
 		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
-		return messageHasLength <= 255;	
+		return messageHasLength <= 255 && messageHasLength != 0;	
 		
 	}
 	

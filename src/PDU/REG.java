@@ -12,7 +12,8 @@ public class REG extends PDU{
 		byte length = ((byte)serverName.
 				getBytes(StandardCharsets.UTF_8).length);
 		
-		bytes = new ByteSequenceBuilder(OpCode.REG.value, length)
+		bytes = new ByteSequenceBuilder(OpCode.REG.value)
+			.append(length)
 			.appendShort((short)TCPport)
 			.append(reg).pad().toByteArray();
 	}

@@ -59,8 +59,8 @@ public class GUI implements ActionListener, Runnable{
 	
 	private Thread clientThread;
 	
-	public GUI(int TCPport){
-		this.TCPport = TCPport;
+	public GUI(int port){
+		this.port = port;
 		socket = null;
 		updateServers = false;
 		
@@ -181,7 +181,7 @@ public class GUI implements ActionListener, Runnable{
 			if(clientconnect) {
 
 				//Client client = new  Client(TCPport,address,this,port);
-				Client client = new  Client(TCPport,"itchy.cs.umu.se",this,1337);
+				Client client = new  Client("itchy.cs.umu.se",this,1337);
 				clientThread = new Thread(client);
 				clientThread.start();
 				clientconnect = false;

@@ -5,6 +5,9 @@ import java.util.LinkedList;
 
 import PDU.PDU;
 
+/**
+ * MessageHandler listens after messages sent from the given socket.
+ */
 
 public class MessageHandler implements Runnable {
 	
@@ -15,6 +18,14 @@ public class MessageHandler implements Runnable {
 	private boolean running;
 	private Thread thread;
 	private byte[] buffer;
+	
+	/**
+	 * Creates a new MessageHandler and tries to get the inputStream
+	 * from the given socket. It also starts a new thread where it
+	 * will listens after messages.
+	 * 
+	 * @param socket - The socket which it listens after messages. 
+	 */
 	
 	public MessageHandler(Socket socket){
 		this.socket = socket;
@@ -34,6 +45,13 @@ public class MessageHandler implements Runnable {
 		
 	}
 
+	/**
+	 * MessageHandler thread's run method. Here it listens after 
+	 * messages from the socket and adds it to the queue.
+	 * If a QUIT PDU is sent the messageHandler closes the socket, 
+	 * inputStream, dataInput and wait's to die.
+	 */
+	
 	public void run() {
 
 		while(running){
@@ -84,21 +102,45 @@ public class MessageHandler implements Runnable {
 		}
 	}
 	
-	public synchronized void notifyThread(){
-		thread.notify();
-	}
+	/**
+	 * Sets MessageHandler's state. 
+	 * 
+	 * @param bool - boolean, determines if the MessageHandler will run
+	 * or not. 
+	 */
 	
 	public synchronized void setMessageRunning(boolean bool){
 		running = bool;
 	}
 	
+	/**
+	 * Gets MessageHandler's state.
+	 * 
+	 * @return running - boolean, true if MessageHandler is running
+	 * else false.
+	 */
+	
 	public synchronized boolean getMessegeRunning(){
 		return running;
 	}
 	
+	/**
+	 * Gets MessageHandler's message queue. 
+	 * 
+	 * @return messageQueue - The queue where all messages will be put
+	 * when they arrives from this socket.
+	 */
+	
 	public synchronized LinkedList <byte[]> getMessageQueue(){
 		return messageQueue;
 	}
+	
+	/**
+	 * Gets the socket which MessageHandler listens after messages.
+	 * 
+	 * @return socket - The socket which MessageHandler listens after
+	 * messages.
+	 */
 	
 	public synchronized Socket getSocket(){
 		return socket;

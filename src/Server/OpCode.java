@@ -18,8 +18,7 @@ public enum OpCode {
     UJOIN(16),
     ULEAVE(17),
     UCNICK(18),
-    NICKS(19),
-    NICKO(20);
+    NICKS(19);
 
     public final byte value;
 
