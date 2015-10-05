@@ -28,8 +28,8 @@ public class ServerTest {
 	private static String name;
 	
 	@Before
-	public void setup(){
-		if(isSetUpDone){
+	public void setup() {
+		if(isSetUpDone) {
 			server = new Server(1555,"itchy.cs.umu.se",1337);
 			try {
 				s1 = new Socket(server.getAddress(),1555);
@@ -59,36 +59,27 @@ public class ServerTest {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-			name =server.getNames().get(s1);
-			System.out.println("test"+name);
+			join = new JOIN("per");
+			try {
+				outStream2.write(join.toByteArray().length);
+				outStream2.write(join.toByteArray());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}				
 		}
 	}
 	
 	@Test
 	public void joinServerWithCorrectName() {
-
+		name =server.getNames().get(s1);
+		System.out.println("test"+name);
+		System.out.println(s1);
 		assertEquals("anna",name);
 	}
 	
 	@Test
 	public void joinWithWrongName(){
-		JOIN join = new JOIN("anna");
 		
-		try {
-			outStream1.write(join.toByteArray().length);
-			outStream1.write(join.toByteArray());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		try {
-			outStream2.write(join.toByteArray().length);
-			outStream2.write(join.toByteArray());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		assertTrue(server.getNames().size()==1);
+		assertEquals(2,server.getNames().size());
 	}
 }

@@ -56,18 +56,14 @@ public class MessageHandler implements Runnable {
 
 		while(running) {
 
-			long length;
-			byte temp;
-			System.out.println("message Queue running");
 			try {
-				buffer = null;
 				
-				temp = dataInput.readByte();
-				length = ((long) temp) & 0xff;
-				
-				
-				buffer = new byte[(int)length];
-				buffer = PDU.readExactly(inStream, (int)length);
+				do{
+					int len = inStream.available();
+					buffer = PDU.readExactly(inStream, len);
+				}while(buffer.length == 0);
+				System.out.println(buffer.length);
+
 				
 			} catch (IOException e) {
 				e.printStackTrace();

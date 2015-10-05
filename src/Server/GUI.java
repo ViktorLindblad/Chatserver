@@ -299,6 +299,14 @@ public class GUI implements ActionListener, Runnable{
 		}
 	}
 	
+	/**
+	 * Gets a string from a different thread and adds into the chatbox.
+	 * This method does the same as getStringFromClient but inserts a \n
+	 * after every 50 characters.
+	 * 
+	 * @param string - The string to add.
+	 */
+	
 	public synchronized void getStringMessageFromClient(String string){
 		int length = string.length();
 		int i = 0;
@@ -437,7 +445,7 @@ public class GUI implements ActionListener, Runnable{
 	private void sendTCP(byte[] bytes) {
 		
 		try {
-			outStream.write(bytes.length);
+			//outStream.write(bytes.length);
 			outStream.write(bytes);
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -53,6 +53,9 @@ public class Server implements Runnable {
 	private ArrayList<MessageHandler> SMH;
 	//A queue which is only used to remove MessageHandlers from SMH list.
 	private LinkedList <MessageHandler> removeQueue; 
+	//A queue which is only used to remove Socket from the lists.
+	private LinkedList <Socket> removeSocketQueue; 
+
 	
     //Variables 
     private boolean running = true;
@@ -80,6 +83,8 @@ public class Server implements Runnable {
 		SMH = new ArrayList<MessageHandler> ();
 		
 		removeQueue = new LinkedList<MessageHandler>();
+		removeSocketQueue = new LinkedList<Socket>();
+
 		buffer = new byte[256];
 		
 		createTCP();
@@ -291,10 +296,12 @@ public class Server implements Runnable {
 								
 								String message = PDU
 										.stringReader
-										(buffer, 8,messageLength);
+										(buffer, 12,messageLength);
 							
 								MESS mess = new MESS
 										(message, messageName, false);
+								System.out.println("Message: "+message);
+								System.out.println("name" + messageName);
 								
 								sendTCPToAll(mess.toByteArray());
 							
@@ -442,6 +449,17 @@ public class Server implements Runnable {
 			while(!removeQueue.isEmpty()) {
 				SMH.remove(removeQueue.removeFirst());
 			}
+			
+			while(!removeSocketQueue.isEmpty()) {
+				Socket remove = removeSocketQueue.removeFirst();
+				
+				ULEAVE uleave = new ULEAVE(connectedNames.get(remove));
+				
+				connectedClients.remove(remove);
+				connectedNames.remove(remove);
+				
+				sendTCPToAll(uleave.toByteArray());
+			}
 		}
 	}
 	
@@ -512,10 +530,12 @@ public class Server implements Runnable {
 			try {
 				DO = temp.getOutputStream();
 
-				DO.write(message.length);
+				//DO.write(message.length);
 				DO.write(message);
 			} catch (IOException e1) {
+				
 				e1.printStackTrace();
+				removeSocketQueue.add(temp);
 			}
 		}
 	}

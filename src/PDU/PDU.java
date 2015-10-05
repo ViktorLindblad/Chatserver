@@ -51,7 +51,7 @@ public abstract class PDU {
         }
         return result;
     }
-
+    
     /**
      * Reads exactly the specified amount of bytes from the stream, blocking
      * until they are available even though some bytes are.
@@ -119,6 +119,7 @@ public abstract class PDU {
     	byte[] subbyte;
     	String string = "";
     	boolean condition = true;
+    	
     	int index = 0;
     	do{
     		subbyte = Arrays.copyOfRange(bytes, start, start+1);

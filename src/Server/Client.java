@@ -208,19 +208,18 @@ public class Client implements Runnable {
 	 */
 	
 	private void receiveTCP() {
-		long length;
-		byte temp;
-		buffer = null;
-		
 		try {
-			temp = dataInput.readByte();
-			length = ((long) temp) & 0xff;
 			
-			buffer = new byte[(int)length];
-			buffer = PDU.readExactly(inStream, (int)length);			
+			do{
+				int len = inStream.available();
+				buffer = PDU.readExactly(inStream, len);
+			}while(buffer.length == 0);
+			System.out.println(buffer.length);
+
+			
 		} catch (IOException e) {
 			e.printStackTrace();
-		}   
+		}
 	}
 	
 	/**
@@ -231,7 +230,6 @@ public class Client implements Runnable {
 	private void sendTCP(byte[] bytes) {
 		
 		try {
-			outStream.write(bytes.length);
 			outStream.write(bytes);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -254,7 +252,7 @@ public class Client implements Runnable {
 
 		try{
 			
-			socket = new Socket("Localhost",tcpPort);
+			socket = new Socket(ip.getCanonicalHostName(),tcpPort);
 			outStream = socket.getOutputStream();
 			
 			inStream = socket.getInputStream();
@@ -630,6 +628,6 @@ public class Client implements Runnable {
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
 		Random random = new Random();
-		GUI client = new GUI(44400+random.nextInt(100));
+		GUI client = new GUI(44400+random.nextInt(1000));
 	}
 }
