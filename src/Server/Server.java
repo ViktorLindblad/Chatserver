@@ -22,7 +22,7 @@ import PDU.UCNICK;
 import PDU.UJOIN;
 import PDU.ULEAVE;
 
-public class Server implements Runnable{
+public class Server implements Runnable {
 	
 	/**
 	 * A server socket, with a thread for connecting clients and one
@@ -37,7 +37,7 @@ public class Server implements Runnable{
 	private byte[] buffer;
 	
 	//Sockets
-	private DatagramSocket datagramSocket;//UTP socket
+	private DatagramSocket datagramSocket;//UDP socket
 	private ServerSocket server;//TCP socket
 	
 	//Ports
@@ -69,7 +69,7 @@ public class Server implements Runnable{
      * @param port - The port to name server.
      */
     
-	public Server(int TCPport,String ip, int port){
+	public Server(int TCPport,String ip, int port) {
 
 		this.TCPport = TCPport;
 		this.port = port;
@@ -83,7 +83,7 @@ public class Server implements Runnable{
 		buffer = new byte[256];
 		
 		createTCP();
-		if(!connect(ip)){
+		if(!connect(ip)) {
 			System.out.println("Connection failed");
 		} else {
 			System.out.println(address);
@@ -103,7 +103,7 @@ public class Server implements Runnable{
 	/**
 	 * Tries to create a new server socket on the given TCP-port. 
 	 */
-	private void createTCP(){
+	private void createTCP() {
 		try {		
 			server = new ServerSocket(TCPport);
 		} catch (IOException e) {
@@ -121,7 +121,7 @@ public class Server implements Runnable{
 	private synchronized byte[] receive() {
 		buffer = new byte[256];
 		DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
-		while(true){
+		while(true) {
 			try {
 				datagramSocket.receive(packet);
 				return packet.getData();
@@ -142,7 +142,8 @@ public class Server implements Runnable{
 	 */
 	private synchronized void send(byte[] data) {
 
-		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
+		DatagramPacket packet = new DatagramPacket
+									(data,data.length,address,port);
 		try {
 			datagramSocket.send(packet);
 			datagramSocket.setSoTimeout(5000);
@@ -165,7 +166,7 @@ public class Server implements Runnable{
 	try {
 		datagramSocket = new DatagramSocket(port);
 		address = InetAddress.getByName(ip);
-		}	catch (SocketException e){
+		}	catch (SocketException e) {
 		e.printStackTrace();
 		return false;
 		}	catch (IOException e) {
@@ -189,7 +190,7 @@ public class Server implements Runnable{
 		
 		byte [] message = receive();
 		
-		if(PDU.byteArrayToLong(message,0,1) == 100){
+		if(PDU.byteArrayToLong(message,0,1) == 100) {
 			System.out.println("not regged");
 			send(reg.toByteArray());
 			message = receive();
@@ -209,10 +210,10 @@ public class Server implements Runnable{
 	
 	private void alive() {
 
-		Thread thread = new Thread(){
-			public void run(){
+		Thread thread = new Thread() {
+			public void run() {
 								
-				while(getRunning()){
+				while(getRunning()) {
 					
 					try {
 						Thread.sleep(8000);
@@ -222,14 +223,15 @@ public class Server implements Runnable{
 					}
 															
 					ALIVE alive = 
-							new ALIVE(connectedClients.size(),getServerId());
+							new ALIVE(connectedClients.size(),
+														getServerId());
 							
 					send(alive.toByteArray());
 					
 					byte [] message = receive();
 					
 					
-					if(PDU.byteArrayToLong(message, 0, 1)== 100){
+					if(PDU.byteArrayToLong(message, 0, 1)== 100) {
 						regServer();
 					}
 				}
@@ -256,10 +258,12 @@ public class Server implements Runnable{
 			if(!connector.getSocketQueue().isEmpty()) {
 				
 				System.out.println("A client connected");
-				Socket socket = connector.getSocketQueue().remove();
+				Socket socket = connector
+								.getSocketQueue().remove();
 				
 				connectedClients.add(socket);
-				MessageHandler messageHandler = new MessageHandler(socket);
+				MessageHandler messageHandler = new 
+											MessageHandler(socket);
 				SMH.add(messageHandler);
 			}
 
@@ -272,28 +276,42 @@ public class Server implements Runnable{
 					
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
 					if(ca!=12) {
-						messageName = connectedNames.get(temp.getSocket());
+						messageName = connectedNames
+											.get(temp.getSocket());
 					}
 					
 					switch(ca) {
 						case(MESS)://MESS
 
-							if(checkMessageLength(buffer)){
-								int messageLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
-								String message = PDU.stringReader(buffer, 8,messageLength);
+							if(checkMessageLength(buffer)) {
+								
+								int messageLength = (int)PDU
+										.byteArrayToLong
+										(buffer, 4, 6);
+								
+								String message = PDU
+										.stringReader
+										(buffer, 8,messageLength);
 							
-								MESS mess = new MESS(message, messageName, false);						
+								MESS mess = new MESS
+										(message, messageName, false);
+								
 								sendTCPToAll(mess.toByteArray());
+							
 							} else {
-								clientSentCorruptMessage(temp.getSocket());
-								ULEAVE leave = new ULEAVE(messageName);
+								clientSentCorruptMessage
+									(temp.getSocket());
+								
+								ULEAVE leave = new 
+										ULEAVE(messageName);
 								
 								connectedClients.remove(temp.getSocket());
 								connectedNames.remove(temp.getSocket());
 								removeQueue.add(temp);
 								sendTCPToAll(leave.toByteArray());
 								QUIT quit = new QUIT();
-								answerSocket(temp.getSocket(),quit.toByteArray());
+								answerSocket(temp.getSocket(),
+													quit.toByteArray());
 							}
 						break;
 						case(QUIT)://QUIT
@@ -314,11 +332,13 @@ public class Server implements Runnable{
 								if( checkNick(name)) {
 
 									nickNameOccupied(temp.getSocket());
-									connectedClients.remove(temp.getSocket());
+									connectedClients.remove
+													(temp.getSocket());
 									removeQueue.add(temp);
 									
 								} else {
-									connectedNames.put(temp.getSocket(),name);
+									connectedNames.put
+												(temp.getSocket(),name);
 									NICKS nick = 
 											new NICKS(connectedNames);
 									
@@ -331,21 +351,31 @@ public class Server implements Runnable{
 								
 							} else {
 								messageHasLength = 
-										(int)PDU.byteArrayToLong(buffer, 1, 2);
-								if(messageHasLength == 0){
+										(int)PDU
+										.byteArrayToLong(buffer, 1, 2);
+								
+								if(messageHasLength == 0) {
+									
 									nickNameIsZero(temp.getSocket());
-									connectedClients.remove(temp.getSocket());
+									connectedClients.remove
+													(temp.getSocket());
 									removeQueue.add(temp);
 								} else {
 							
 									clientHasToLongName(temp.getSocket());
-									ULEAVE uleave = new ULEAVE(messageName);
+									ULEAVE uleave = new 
+													ULEAVE(messageName);
 									
-									connectedClients.remove(temp.getSocket());
-									connectedNames.remove(temp.getSocket());
+									connectedClients
+											.remove(temp.getSocket());
+									
+									connectedNames
+											.remove(temp.getSocket());
+									
 									sendTCPToAll(uleave.toByteArray());
 									QUIT quit = new QUIT();
-									answerSocket(temp.getSocket(),quit.toByteArray());
+									answerSocket(temp.getSocket(),
+												quit.toByteArray());
 								}
 							}
 							
@@ -353,47 +383,63 @@ public class Server implements Runnable{
 						case(CHNICK)://CHNICK
 							String newName = readNameFromMessage(buffer);
 							if(checkNameLength(buffer)) {
-								if(checkNick(newName)){
+								if(checkNick(newName)) {
 									
 									nickNameOccupied(temp.getSocket());
 								
 								} else {
-									UCNICK cnick = new UCNICK(messageName,newName);
+									UCNICK cnick = new 
+											UCNICK(messageName,newName);
+									
 									sendTCPToAll(cnick.toByteArray());
 									
-									connectedNames.put(temp.getSocket(), newName);
+									connectedNames
+										.put(temp.getSocket(), newName);
 								}
 							} else {
 								messageHasLength = 
-										(int)PDU.byteArrayToLong(buffer, 1, 2);
-								if(messageHasLength == 0){
+										(int)PDU
+										.byteArrayToLong(buffer, 1, 2);
+								
+								if(messageHasLength == 0) {
+									
 									nickNameIsZero(temp.getSocket());
+							
 								} else {
 									clientHasToLongName(temp.getSocket());
-									ULEAVE uleave = new ULEAVE(messageName);
+									ULEAVE uleave = new 
+													ULEAVE(messageName);
 									
-									connectedClients.remove(temp.getSocket());
-									connectedNames.remove(temp.getSocket());
+									connectedClients.remove
+													(temp.getSocket());
+									
+									connectedNames.remove
+													(temp.getSocket());
 									
 									sendTCPToAll(uleave.toByteArray());
 									QUIT quit = new QUIT();
-									answerSocket(temp.getSocket(),quit.toByteArray());
+									answerSocket(temp.getSocket()
+													,quit.toByteArray());
 								}
 							}
 						break;
 						default:
 							QUIT quit = new QUIT();
-							answerSocket(temp.getSocket(),quit.toByteArray());
+							answerSocket(temp.getSocket(),
+													quit.toByteArray());
+							
 							ULEAVE dleave = new ULEAVE(messageName);
+							
 							connectedClients.remove(temp.getSocket());
 							connectedNames.remove(temp.getSocket());
 							removeQueue.add(temp);
+							
 							sendTCPToAll(dleave.toByteArray());
 						break;
 					}
 				}
 			}
-			while(!removeQueue.isEmpty()){
+			while(!removeQueue.isEmpty()) {
 				SMH.remove(removeQueue.removeFirst());
 			}
 		}
@@ -459,7 +505,7 @@ public class Server implements Runnable{
 	 */
 	
 	public synchronized void sendTCPToAll(byte[] message) {
-		for(Socket temp : connectedClients){
+		for(Socket temp : connectedClients) {
 			
 			OutputStream DO;
 			
@@ -479,7 +525,7 @@ public class Server implements Runnable{
 	 * @return running - true if the server is running else false.
 	 */
 
-	public synchronized boolean getRunning(){
+	public synchronized boolean getRunning() {
 		return running;
 	}
 	
@@ -488,7 +534,7 @@ public class Server implements Runnable{
 	 * @return Integer - The servers ID.
 	 */
 	
-	public synchronized int getServerId(){
+	public synchronized int getServerId() {
 		return serverId;
 	}
 	
@@ -497,7 +543,7 @@ public class Server implements Runnable{
 	 * @param id - The servers ID
 	 */
 	
-	public synchronized void setServerId(int id){
+	public synchronized void setServerId(int id) {
 		serverId = id;
 	}
 	
@@ -505,7 +551,7 @@ public class Server implements Runnable{
 	 * Sending message to the client who sent Corrupt message.
 	 */
 	
-	private void clientSentCorruptMessage(Socket socket){
+	private void clientSentCorruptMessage(Socket socket) {
 		String errorMessage = "You have send a corrupt message, goodbye!";
 		MESS mess = new MESS(errorMessage, "", false);
 		answerSocket(socket,mess.toByteArray());
@@ -515,7 +561,7 @@ public class Server implements Runnable{
 	 * Sending a message to the client who had chosen a to long name.
 	 */
 	
-	private void clientHasToLongName(Socket socket){
+	private void clientHasToLongName(Socket socket) {
 		String errorMessage = "Your nickname is to long, goodbye!";
 		MESS mess = new MESS(errorMessage, "", false);
 		answerSocket(socket,mess.toByteArray());
@@ -525,7 +571,7 @@ public class Server implements Runnable{
 	 * Sending a message to the client if the nickname is occupied 
 	 */
 	
-	private void nickNameOccupied(Socket socket){
+	private void nickNameOccupied(Socket socket) {
 		String errorMessage = "Your nickname is occupied!";
 		MESS mess = new MESS(errorMessage, "", false);
 		answerSocket(socket,mess.toByteArray());
@@ -535,7 +581,7 @@ public class Server implements Runnable{
 	 * Sending a message to the client if the nickname has zero length.
 	 */
 	
-	private void nickNameIsZero(Socket socket){
+	private void nickNameIsZero(Socket socket) {
 		String errorMessage = "You can't have a nickname with zero length!\n"
 				+ "Try a different name.";
 		MESS mess = new MESS(errorMessage, "", false);
@@ -550,7 +596,7 @@ public class Server implements Runnable{
 	 * @return Boolean - true if message is not to long else false.
 	 */
 	
-	private boolean checkMessageLength(byte[] bytes){
+	private boolean checkMessageLength(byte[] bytes) {
 		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
 		return messageHasLength <= 65535;	
 	}
@@ -563,7 +609,7 @@ public class Server implements Runnable{
 	 * @return boolean - true if the name is not to long else false.
 	 */
 	
-	private boolean checkNameLength(byte[] bytes){
+	private boolean checkNameLength(byte[] bytes) {
 
 		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
 		return messageHasLength <= 255 && messageHasLength != 0;	
@@ -575,7 +621,7 @@ public class Server implements Runnable{
 	 * @return InetAddress - Servers InetAddress.
 	 */
 	
-	public InetAddress getAddress(){
+	public InetAddress getAddress() {
 		return server.getInetAddress();
 	}
 	
@@ -583,12 +629,13 @@ public class Server implements Runnable{
 	 * Gets the servers hash table with sockets and names.  
 	 * @return Hash table - Servers hash table.
 	 */
-	public synchronized Hashtable<Socket, String> getNames(){
+	
+	public synchronized Hashtable<Socket, String> getNames() {
 		return connectedNames;
 	}
 	
 	@SuppressWarnings("unused")
-	public static void main(String[] args){
+	public static void main(String[] args) {
 		Server server = new Server(1365,"itchy.cs.umu.se",1337);
 	}
 }

@@ -27,7 +27,7 @@ public class MessageHandler implements Runnable {
 	 * @param socket - The socket which it listens after messages. 
 	 */
 	
-	public MessageHandler(Socket socket){
+	public MessageHandler(Socket socket) {
 		this.socket = socket;
 		messageQueue = new LinkedList <byte[]>();
 		running = true;
@@ -54,7 +54,7 @@ public class MessageHandler implements Runnable {
 	
 	public void run() {
 
-		while(running){
+		while(running) {
 
 			long length;
 			byte temp;
@@ -72,7 +72,7 @@ public class MessageHandler implements Runnable {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			if(PDU.byteArrayToLong(buffer, 0, 1)==11){
+			if(PDU.byteArrayToLong(buffer, 0, 1)==11) {
 				try {
 	                dataInput.close();
 	            } catch (IOException e) {
@@ -95,10 +95,7 @@ public class MessageHandler implements Runnable {
 					e.printStackTrace();
 				}
 			}
-							     
 			messageQueue.add(buffer);
-
-			
 		}
 	}
 	
@@ -109,7 +106,7 @@ public class MessageHandler implements Runnable {
 	 * or not. 
 	 */
 	
-	public synchronized void setMessageRunning(boolean bool){
+	public synchronized void setMessageRunning(boolean bool) {
 		running = bool;
 	}
 	
@@ -120,7 +117,7 @@ public class MessageHandler implements Runnable {
 	 * else false.
 	 */
 	
-	public synchronized boolean getMessegeRunning(){
+	public synchronized boolean getMessegeRunning() {
 		return running;
 	}
 	
@@ -131,7 +128,7 @@ public class MessageHandler implements Runnable {
 	 * when they arrives from this socket.
 	 */
 	
-	public synchronized LinkedList <byte[]> getMessageQueue(){
+	public synchronized LinkedList <byte[]> getMessageQueue() {
 		return messageQueue;
 	}
 	
@@ -142,7 +139,7 @@ public class MessageHandler implements Runnable {
 	 * messages.
 	 */
 	
-	public synchronized Socket getSocket(){
+	public synchronized Socket getSocket() {
 		return socket;
 	}
 }

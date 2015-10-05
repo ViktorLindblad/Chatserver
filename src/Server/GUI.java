@@ -21,6 +21,10 @@ import PDU.CHNICK;
 import PDU.MESS;
 import PDU.QUIT;
 
+/**
+ * A graphical display used by a persons to interact with the program.
+ *
+ */
 
 public class GUI implements ActionListener, Runnable{
 
@@ -40,7 +44,7 @@ public class GUI implements ActionListener, Runnable{
 	private LinkedList<String> nickQueue;
 	
 	private String chatString = "";
-	private String name = "", address;
+	private String name = "";
 	private String clientNames = "";
 
 	private Socket socket;
@@ -49,7 +53,6 @@ public class GUI implements ActionListener, Runnable{
 	private JFrame frame;
 	
 	private int port;
-	private int TCPport;
 	
 	private JTextArea chatbox;
 	private JTextField message;
@@ -58,6 +61,13 @@ public class GUI implements ActionListener, Runnable{
 	private JScrollPane clientsScroll;
 	
 	private Thread clientThread;
+	
+	/**
+	 * Creates a new GUI 
+	 * 
+	 * @param port - The port where it will try to connect to the 
+	 * name server.
+	 */
 	
 	public GUI(int port){
 		this.port = port;
@@ -159,14 +169,31 @@ public class GUI implements ActionListener, Runnable{
 		
 	}
 
+	/**
+	 * Gets the queue with the input from the user
+	 * 
+	 * @return queue - The queue with Strings.
+	 */
 	
 	public synchronized LinkedList<String> getQueue(){
 		return queue;
 	}
 	
+	/**
+	 * Adds a string to the queue.
+	 * 
+	 * @param string - The string to add.
+	 */
+	
 	private void addStringToQueue(String string){
 		queue.add(string);
 	}
+	
+	/**
+	 * This method is called if an ActionEvent is done.
+	 * It will check which JButton was pressed and 
+	 * act after that.
+	 */
 
 	public void actionPerformed(ActionEvent e) {
 		
@@ -180,8 +207,7 @@ public class GUI implements ActionListener, Runnable{
 			
 			if(clientconnect) {
 
-				//Client client = new  Client(TCPport,address,this,port);
-				Client client = new  Client("itchy.cs.umu.se",this,1337);
+				Client client = new  Client("itchy.cs.umu.se",this,port,1337);
 				clientThread = new Thread(client);
 				clientThread.start();
 				clientconnect = false;
@@ -216,30 +242,91 @@ public class GUI implements ActionListener, Runnable{
 		
 	}
 	
+	/**
+	 * Adds a string to the nickQueue, which is a queue only
+	 * containing nick name.
+	 * 
+	 * @param text - The nick name to add.
+	 * 
+	 */
+	
 	private void addStringToNickQueue(String text) {
 		nickQueue.add(text);
 	}
+	
+	/**
+	 * Gets the nickQueue.
+	 * 
+	 * @return nickQueue - The queue with nick names.
+	 */
+	
 	public synchronized LinkedList<String> getNickQueue(){
 		return nickQueue;
 	}
 
+	/**
+	 * Sets the boolean quitserver to the given boolean.
+	 * 
+	 * @param b - The condition to set.
+	 */
 
 	public synchronized void setQuit(boolean b) {
 		quitserver = b;
 	}
 	
+	/**
+	 * Gets the boolean quitserver condition.
+	 *  
+	 * @return boolean - True if quit button has been pressed else false.
+	 */
+	
 	public synchronized boolean getQuit(){
 		return quitserver;
 	}
-
+	
+	/**
+	 * Gets a string from a different thread and adds it into
+	 * the chatbox.
+	 *  
+	 * @param string - The string to add.
+	 */
 
 	public synchronized void getStringFromClient(String string){
 		if(string != ""){
+
 			chatString += string + "\n";
 			chatbox.setText(chatString);
-
 		}
 	}
+	
+	public synchronized void getStringMessageFromClient(String string){
+		int length = string.length();
+		int i = 0;
+		int messlength = 50;
+		if(string.length() <= 50) {
+			chatString += string + "\n";
+		} else {
+			while(length > 50) {
+			
+				length -= 50;
+				
+				chatString += string.substring(i, i+messlength)+"\n";
+				i += 50;
+			}
+			if(length <=50) {
+				messlength = length;
+				chatString += string.substring(i, i+messlength)+"\n";
+			}
+		}
+		chatbox.setText(chatString);
+	}
+	
+	/**
+	 * Gets a list with names from the client and adds it into
+	 * JTextArea with names.
+	 * 
+	 * @param nickNames - The list with the names.
+	 */
 	
 	public synchronized void getNameFromClient(ArrayList<String> nickNames){
 		clientNames = "";
@@ -251,14 +338,33 @@ public class GUI implements ActionListener, Runnable{
 		
 	}
 	
+	/**
+	 * Sets the boolean updateServers to the given boolean.
+	 * 
+	 * @param condition - The boolean to set.
+	 */
+	
 	public synchronized void setUpdate(boolean condition){
 		updateServers = condition;
 	}
 	
+	/**
+	 * Gets the boolean updateServers state.
+	 * 
+	 * @return opdateServers - boolean true if the update button
+	 * has been pressed else false.
+	 */
+	
 	public synchronized boolean getUpdate(){
 		return updateServers;
 	}
-
+	
+	/**
+	 * The GUI threads run method.
+	 * Checks two queue's and one boolean if the queue's not empty a 
+	 * PDU is created and sent to the server. if the boolean is
+	 * true the client closes.
+	 */
 
 	public void run() {
 		chatbox.setText("Chose port to connect to and press sendmessage \n");
@@ -308,6 +414,12 @@ public class GUI implements ActionListener, Runnable{
 		}
 	}	
 	
+	/**
+	 * Sets the field socket to the given socket
+	 * 
+	 * @param socket - The socket to set.
+	 */
+	
 	public synchronized void setSocket(Socket socket){
 		this.socket = socket;
 		try {
@@ -316,6 +428,12 @@ public class GUI implements ActionListener, Runnable{
 			e.printStackTrace();
 		}
 	}
+	
+	/**
+	 * Sends a message to the server with TCP.
+	 * 
+	 * @param bytes - The message in bytes.
+	 */
 	private void sendTCP(byte[] bytes) {
 		
 		try {
@@ -327,10 +445,22 @@ public class GUI implements ActionListener, Runnable{
 		
 	}
 
+	/**
+	 * Get the boolean connected's state.
+	 * 
+	 * @return connected - boolean true if the socket is connected
+	 * else false.
+	 */
 
 	public synchronized boolean getConnected() {
 		return connected;
 	}
+	
+	/**
+	 * Sets the boolean connected to the given boolean.
+	 * 
+	 * @param condition - The boolean to set the field to.
+	 */
 	
 	public synchronized void setConnected(boolean condition){
 		connected = condition;

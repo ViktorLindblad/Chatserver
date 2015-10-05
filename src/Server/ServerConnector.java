@@ -20,7 +20,7 @@ public class ServerConnector implements Runnable {
 	 * 
 	 * @param server - The serverSocket where it listens after clients.
 	 */
-	public ServerConnector(ServerSocket server){
+	public ServerConnector(ServerSocket server) {
 		queue = new LinkedList<Socket>();
 		this.server = server;
 		running = true;
@@ -31,8 +31,8 @@ public class ServerConnector implements Runnable {
 	 * Thread run method, it runs when this thread.start() is called.
 	 */
 	
-	public void run(){
-		while(running){
+	public void run() {
+		while(running) {
 			
 			System.out.println("listning after clients");
 			
@@ -52,7 +52,7 @@ public class ServerConnector implements Runnable {
 	 * @return running - true if the ServerConnector is running else false.
 	 */
 	
-	public synchronized boolean getConnectorRunning(){
+	public synchronized boolean getConnectorRunning() {
 		return running;
 	}
 	
@@ -61,7 +61,7 @@ public class ServerConnector implements Runnable {
 	 * @param condition - a boolean to set the state.
 	 */
 	
-	public synchronized void setConnectorRunning(boolean condition){
+	public synchronized void setConnectorRunning(boolean condition) {
 		running = condition;
 	}
 	
@@ -72,7 +72,7 @@ public class ServerConnector implements Runnable {
 	 * put when they connect.
 	 */
 	
-	public synchronized LinkedList<Socket> getSocketQueue(){
+	public synchronized LinkedList<Socket> getSocketQueue() {
 		return queue;
 	}
 	

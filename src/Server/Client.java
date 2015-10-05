@@ -29,7 +29,7 @@ public class Client implements Runnable {
 							ULEAVE = 17, UCNICK = 18, NICKS = 19;
 	
 	//Sockets
-	private MulticastSocket multicastSocket;//UTP socket
+	private MulticastSocket multicastSocket;//UDP socket
 	private Socket socket;//TCP socket
 	
 	//Lists
@@ -48,7 +48,7 @@ public class Client implements Runnable {
 	private InputStream inStream;
 	private DataInputStream dataInput;
 	
-	private int port, sequenceNumber, servers;
+	private int UDPport, port, sequenceNumber, servers;
 	private InetAddress address;
 	private GUI gui;
 	private String name = "";
@@ -60,11 +60,12 @@ public class Client implements Runnable {
 	 * 
 	 * @param ip - String representation of to the address to server.
 	 * @param gui - The gui to this client.
-	 * @param port - The UTP port to the name server.
+	 * @param port - The UDP port to the name server.
 	 */
 	
-	public Client(String ip, GUI gui, int port) {
+	public Client(String ip, GUI gui, int UDPport, int port) {
 
+		this.UDPport = UDPport;
 		this.port = port;
 		buffer = new byte[256];
 		this.gui = gui;
@@ -299,7 +300,7 @@ public class Client implements Runnable {
 	private boolean connect(String ip) {
 		try {
 			address = InetAddress.getByName(ip);
-			multicastSocket = new MulticastSocket(port);
+			multicastSocket = new MulticastSocket(UDPport);
 			System.out.println(address);
 		}	catch (SocketException e) {
 			e.printStackTrace();
@@ -312,7 +313,7 @@ public class Client implements Runnable {
 	}
 	
 	/**
-	 * Listens after messages in UTP from the name server.
+	 * Listens after messages in UDP from the name server.
 	 * 
 	 * @return byte[] - The message in bytes.
 	 */
@@ -335,7 +336,7 @@ public class Client implements Runnable {
 	}
 	
 	/**
-	 * Sends a message over UTP.
+	 * Sends a message over UDP.
 	 * 
 	 * @param data - The message to send in bytes.
 	 */
@@ -373,7 +374,7 @@ public class Client implements Runnable {
 
 			if(!gui.getQueue().isEmpty()) {
 				message = gui.getQueue().removeFirst();
-				if(message != "") {
+				if(isNumber(message)) {
 					server = Integer.parseInt(message);
 				}
 			}
@@ -437,7 +438,7 @@ public class Client implements Runnable {
 				
 				String mess = sdf.format(resultdate)+": "
 											+messname+" said: "+message;
-				gui.getStringFromClient(mess);
+				gui.getStringMessageFromClient(mess);
 				
 			break;
 			
@@ -591,8 +592,9 @@ public class Client implements Runnable {
 	/**
 	 * Checks if the given object is a number.
 	 * 
-	 * @param o - The object
-	 * @return
+	 * @param o - The object to check.
+	 * 
+	 * @return boolean - True if it is a number else false.
 	 */
 	
 	private boolean isNumber(Object o){
@@ -607,6 +609,11 @@ public class Client implements Runnable {
 
 	        return isNumber;
 	   }
+	
+	/**
+	 * Lets the user chose a nickname, will wait until a nick
+	 * name is chosen.
+	 */
 	
 	private void chooseNickName(){
 		gui.getStringFromClient("Chose your nickname!");
@@ -623,11 +630,6 @@ public class Client implements Runnable {
 	@SuppressWarnings("unused")
 	public static void main(String[] args){
 		Random random = new Random();
-		GUI client = new GUI(4400+random.nextInt(100));
-		
-		//Client client = new Client(1337,"itchy.cs.umu.se");
+		GUI client = new GUI(44400+random.nextInt(100));
 	}
-
-
-
 }
