@@ -271,15 +271,13 @@ public class Server implements Runnable {
 				if(!temp.getMessageQueue().isEmpty()) {
 
 					buffer = temp.getMessageQueue().remove();
-					
-					int messageHasLength;
-					
+										
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
 					if(ca!=12) {
 						messageName = connectedNames
 											.get(temp.getSocket());
 					}
-					
+					System.out.println("case: "+ca);
 					switch(ca) {
 						case(MESS)://MESS
 
@@ -350,26 +348,11 @@ public class Server implements Runnable {
 									sendTCPToAll(join.toByteArray());
 								}
 								
-							} else {
-								messageHasLength = 
-										(int)PDU
-										.byteArrayToLong(buffer, 1, 2);
+							} else {//To long/short name
 								
-								if(messageHasLength == 0) {
-									//To long/short name
+								clientHasToLongName(temp.getSocket());
+								removeQueue.add(temp);
 								
-									clientHasToLongName(temp.getSocket());
-									ULEAVE uleave = new 
-													ULEAVE(messageName);
-									
-									connectedNames
-											.remove(temp.getSocket());
-									
-									sendTCPToAll(uleave.toByteArray());
-									QUIT quit = new QUIT();
-									answerSocket(temp.getSocket(),
-												quit.toByteArray());
-								}
 							}
 							
 						break;
@@ -390,39 +373,35 @@ public class Server implements Runnable {
 										.put(temp.getSocket(), newName);
 								}
 							} else {
-								messageHasLength = 
-										(int)PDU
-										.byteArrayToLong(buffer, 1, 2);
-								
-								if(messageHasLength == 0) {
-								
-									clientHasToLongName(temp.getSocket());
-									ULEAVE uleave = new 
-													ULEAVE(messageName);
-									
+
+								clientHasToLongName(temp.getSocket());
+								temp.setHasJoin(false);
+								ULEAVE uleave = new 
+												ULEAVE(messageName);
+									System.out.println(messageName);
 
 									
-									connectedNames.remove
-													(temp.getSocket());
+								connectedNames.remove
+												(temp.getSocket());
+								removeQueue.add(temp);
+
 									
-									sendTCPToAll(uleave.toByteArray());
-									QUIT quit = new QUIT();
-									answerSocket(temp.getSocket()
-													,quit.toByteArray());
-								}
+								sendTCPToAll(uleave.toByteArray());
+								
 							}
 						break;
 						default:
 							QUIT quit = new QUIT();
 							answerSocket(temp.getSocket(),
 													quit.toByteArray());
-							
-							ULEAVE dleave = new ULEAVE(messageName);
-							
-							connectedNames.remove(temp.getSocket());
-							removeQueue.add(temp);
-							
-							sendTCPToAll(dleave.toByteArray());
+							if(messageName!=null){
+								ULEAVE dleave = new ULEAVE(messageName);
+								
+								connectedNames.remove(temp.getSocket());
+								removeQueue.add(temp);
+								
+								sendTCPToAll(dleave.toByteArray());
+							}
 						break;
 					}
 				}
