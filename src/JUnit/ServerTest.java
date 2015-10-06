@@ -27,7 +27,7 @@ public class ServerTest {
 			isSetUpDone = false;
 			server = new Server(1555,"itchy.cs.umu.se",1337);
 			for(int i=1; i<=255; i++) {
-				serverTestClient SC = new serverTestClient(server,""+i);
+				serverTestClient SC = new serverTestClient(server,"vi"+i);
 			}
 		}
 	}

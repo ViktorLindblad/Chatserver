@@ -47,9 +47,7 @@ public class serverTestClient implements Runnable{
 				do{
 					int len = inStream1.available();
 					buffer = PDU.readExactly(inStream1, len);
-				}while(buffer.length == 0);
-				System.out.println(buffer.length);
-	
+				}while(buffer.length == 0);	
 				
 			} catch (IOException e) {
 				e.printStackTrace();

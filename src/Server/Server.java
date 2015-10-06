@@ -183,7 +183,8 @@ public class Server implements Runnable {
 	
 	/**
 	 * Registers the server to the name server.
-	 * Sends a REG PDU with the servers TCP port and it's name.
+	 * Sends a REG PDU with the servers TCP port and it's name
+	 * over UDP.
 	 * 
 	 * @return Integer - the servers ID number. 
 	 */
@@ -228,7 +229,7 @@ public class Server implements Runnable {
 					}
 															
 					ALIVE alive = 
-							new ALIVE(connectedClients.size(),
+							new ALIVE(getConnectedClients().size(),
 														getServerId());
 							
 					send(alive.toByteArray());
@@ -614,6 +615,10 @@ public class Server implements Runnable {
 	private boolean checkMessageLength(byte[] bytes) {
 		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
 		return messageHasLength <= 65535;	
+	}
+	
+	private synchronized ArrayList<Socket> getConnectedClients() {
+		return connectedClients;
 	}
 	
 	/**
