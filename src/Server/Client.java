@@ -31,6 +31,8 @@ public class Client implements Runnable {
 	private MulticastSocket multicastSocket;//UDP socket
 	private Socket socket;//TCP socket
 	
+	private MessageHandler messageHandler;
+	
 	//Lists
 	//A list with all server names.
 	private ArrayList<String> serverNames;
@@ -206,117 +208,9 @@ public class Client implements Runnable {
 	 */
 	
 	private void receiveTCP() {
-		try {
-			int len;
-			byte[] temp = new byte[65535];
-			byte[] tempbuffer = new byte[0];
-			
-			len = inStream.read(temp);				
-			tempbuffer = new byte[len];
-			
-			for(int i = 0; i < len; i++ ) {
-				tempbuffer[i] = temp[i];
-			}
-			
-			int bytesread = checkBytesRead(tempbuffer);
-			
-			if(bytesread - tempbuffer.length < 0) {
-				byte[] newtemp = Arrays.copyOfRange
-						(tempbuffer, bytesread, tempbuffer.length);
-				
-				bytesread = checkBytesRead(newtemp);
-				
-				if(bytesread - newtemp.length < 0){
-					
-				}
-				
-				
-			} else if(bytesread - tempbuffer.length > 0) {
-				
-			}
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	private int checkBytesRead(byte[] bytes) {
-		int op = (int)PDU.byteArrayToLong(bytes, 0, 1);
-		
-		int nameLength;
-		int messLength;
-		int sequenceLength = 0;
-		int pads=0;
-		
-		switch(op){
-		
-		case(MESS):
-			
-			nameLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
-			pads += calculatePads(nameLength);
-			messLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
-			pads += calculatePads(messLength);
-			
-			sequenceLength = 12 + nameLength + messLength+pads;
-			
-			break;
-		case(QUIT):
-			
-			sequenceLength = 4;
-			
-			break;
-		case(UJOIN):
-			
-			nameLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
-			pads += calculatePads(nameLength);
-		
-			sequenceLength = 8 + nameLength + pads;
-						
-			break;
-		case(ULEAVE):
-			
-			nameLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
-			pads += calculatePads(nameLength);
-		
-			sequenceLength = 8 + nameLength + pads;
-			
-			break;
-		case(UCNICK):
-			
-			nameLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
-			pads += calculatePads(nameLength);
-
-			int second = (int)PDU.byteArrayToLong(bytes, 2, 3);
-			pads += calculatePads(second);
-
-			
-			sequenceLength = 8 + nameLength + second + pads;
-			
-			break;
-		case(NICKS):
-			
-			nameLength = (int)PDU.byteArrayToLong(bytes, 2, 4);
-			pads += calculatePads(nameLength);
-
-			
-			sequenceLength = 4 + nameLength + pads;
-		
-			break;
-		default:
-			
-			break;
-		}
-		return sequenceLength;
 
 	}
 
-	private int calculatePads(int length) {
-		if(length % 4 == 0){
-			return 0;
-		} else {
-			return 4 - (length % 4 );
-		}
-	}
 
 	/**
 	 * Sends a message over TCP.
@@ -350,7 +244,7 @@ public class Client implements Runnable {
 			socket = new Socket("localhost",tcpPort);
 			outStream = socket.getOutputStream();
 			
-			inStream = socket.getInputStream();
+			messageHandler = new MessageHandler(socket);
 
 			gui.setConnected(true);
 			
@@ -483,8 +377,10 @@ public class Client implements Runnable {
 				server = 0;
 			}
 			while(gui.getConnected()) {
-				receiveTCP();
-				checkMessage(buffer);
+				if(!messageHandler.getMessageQueue().isEmpty()){
+					checkMessage(messageHandler.getMessageQueue()
+							.removeFirst());
+				}
 			}
 		}
 	}
