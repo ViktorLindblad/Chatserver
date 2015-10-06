@@ -260,18 +260,17 @@ public class Server implements Runnable {
 
 		while(getRunning()) {
 			
-			if(!connector.getSocketQueue().isEmpty()) {
+			while(!connector.getSocketQueue().isEmpty()) {
 				
-				System.out.println("A client connected");
 				Socket socket = connector
 								.getSocketQueue().remove();
 				
-				connectedClients.add(socket);
 				MessageHandler messageHandler = new 
 											MessageHandler(socket);
 				SMH.add(messageHandler);
+				
 			}
-
+			System.out.println("SMH: "+SMH.size());
 			for(MessageHandler temp : SMH) {
 				if(!temp.getMessageQueue().isEmpty()) {
 
@@ -336,16 +335,18 @@ public class Server implements Runnable {
 							String name = readNameFromMessage(buffer);
 							
 							if(checkNameLength(buffer)) {
-								if( checkNick(name)) {
+								if( checkNick(name)) {//Name is occupied.
 
 									nickNameOccupied(temp.getSocket());
-									connectedClients.remove
-													(temp.getSocket());
 									removeQueue.add(temp);
 									
-								} else {
+								} else {//Successfully join
+									connectedClients
+											.add(temp.getSocket());
+									System.out.println("Server: "+connectedClients.size());
 									connectedNames.put
 												(temp.getSocket(),name);
+									
 									NICKS nick = 
 											new NICKS(connectedNames);
 									
@@ -361,20 +362,16 @@ public class Server implements Runnable {
 										(int)PDU
 										.byteArrayToLong(buffer, 1, 2);
 								
-								if(messageHasLength == 0) {
+								if(messageHasLength == 0) {//To short name
 									
 									nickNameIsZero(temp.getSocket());
-									connectedClients.remove
-													(temp.getSocket());
+
 									removeQueue.add(temp);
-								} else {
+								} else {//To long name
 							
 									clientHasToLongName(temp.getSocket());
 									ULEAVE uleave = new 
 													ULEAVE(messageName);
-									
-									connectedClients
-											.remove(temp.getSocket());
 									
 									connectedNames
 											.remove(temp.getSocket());

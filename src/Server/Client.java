@@ -1,6 +1,5 @@
 package Server;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,7 +45,6 @@ public class Client implements Runnable {
 	
 	private OutputStream outStream;
 	private InputStream inStream;
-	private DataInputStream dataInput;
 	
 	private int UDPport, port, sequenceNumber, servers;
 	private InetAddress address;
@@ -259,7 +257,6 @@ public class Client implements Runnable {
 			
 			inStream = socket.getInputStream();
 
-			dataInput = new DataInputStream(inStream);
 			gui.setConnected(true);
 			
 			gui.getStringFromClient("Sending request to join...");
@@ -569,11 +566,6 @@ public class Client implements Runnable {
 	private void closeClientsSocket() {
 		try {
 			outStream.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		try {
-			dataInput.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

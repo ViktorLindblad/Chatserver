@@ -33,16 +33,15 @@ public class ServerConnector implements Runnable {
 	
 	public void run() {
 		while(running) {
-			
-			System.out.println("listning after clients");
-			
+						
 			try {
 				queue.add(server.accept());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			
-			System.out.println("client joined server");
+			System.out.println("sC: "+queue.size());
+		
 		}
 	}
 

@@ -14,7 +14,6 @@ public class MessageHandler implements Runnable {
 	private LinkedList <byte[]> messageQueue; 
 	private Socket socket;
 	private InputStream inStream;
-	private DataInputStream dataInput;
 	private boolean running;
 	private Thread thread;
 	private byte[] buffer;
@@ -34,7 +33,6 @@ public class MessageHandler implements Runnable {
 		
 		try{
 			inStream = socket.getInputStream();
-			dataInput = new DataInputStream(inStream);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -62,18 +60,12 @@ public class MessageHandler implements Runnable {
 					int len = inStream.available();
 					buffer = PDU.readExactly(inStream, len);
 				}while(buffer.length == 0);
-				System.out.println(buffer.length);
 
 				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			if(PDU.byteArrayToLong(buffer, 0, 1)==11) {
-				try {
-	                dataInput.close();
-	            } catch (IOException e) {
-	            	e.printStackTrace();
-	            }
 	    		try {
 	    			inStream.close();
 	    		} catch (IOException e) {
