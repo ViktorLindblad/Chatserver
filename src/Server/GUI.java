@@ -445,7 +445,6 @@ public class GUI implements ActionListener, Runnable{
 	private void sendTCP(byte[] bytes) {
 		
 		try {
-			//outStream.write(bytes.length);
 			outStream.write(bytes);
 		} catch (IOException e) {
 			e.printStackTrace();

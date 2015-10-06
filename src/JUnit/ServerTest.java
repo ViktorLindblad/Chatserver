@@ -24,7 +24,6 @@ public class ServerTest {
 	private static OutputStream outStream1,outStream2;
 	private static InputStream inStream1, inStream2;
 	private static DataInputStream dataInput1, dataInput2;
-	private static DataOutputStream dataOutput1, dataOutput2;
 	private static String name;
 	
 	@Before
@@ -40,7 +39,6 @@ public class ServerTest {
 			}
 	
 			dataInput1 = new DataInputStream(inStream1);
-			dataOutput1 = new DataOutputStream(outStream1);
 	
 			try {
 				s2 = new Socket(server.getAddress(),1555);
@@ -50,30 +48,28 @@ public class ServerTest {
 				e.printStackTrace();
 			}
 			dataInput2 = new DataInputStream(inStream2);
-			dataOutput2 = new DataOutputStream(outStream2);
 			isSetUpDone = false;
 			JOIN join = new JOIN("anna");
 			try {
-				outStream1.write(join.toByteArray().length);
 				outStream1.write(join.toByteArray());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			join = new JOIN("per");
 			try {
-				outStream2.write(join.toByteArray().length);
 				outStream2.write(join.toByteArray());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}				
+			name =server.getNames().get(s1);
+			System.out.println("test"+name);
+			System.out.println(s1);
 		}
 	}
 	
 	@Test
 	public void joinServerWithCorrectName() {
-		name =server.getNames().get(s1);
-		System.out.println("test"+name);
-		System.out.println(s1);
+
 		assertEquals("anna",name);
 	}
 	

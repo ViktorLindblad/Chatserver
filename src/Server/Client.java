@@ -251,7 +251,9 @@ public class Client implements Runnable {
 	private boolean connectToTCP(int tcpPort,Inet4Address ip) {
 
 		try{
-			
+			System.out.println(ip.getCanonicalHostName());
+			System.out.println(ip.getHostName());
+			System.out.println(ip.getHostAddress());
 			socket = new Socket(ip.getCanonicalHostName(),tcpPort);
 			outStream = socket.getOutputStream();
 			

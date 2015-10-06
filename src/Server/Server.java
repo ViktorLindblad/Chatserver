@@ -489,11 +489,10 @@ public class Server implements Runnable {
 	 */
 	
 	public synchronized void answerSocket(Socket temp, byte[] bytes) {
-			OutputStream DO;
+			OutputStream output;
 		try {
-			DO = temp.getOutputStream();
-			DO.write(bytes.length);
-			DO.write(bytes);
+			output = temp.getOutputStream();
+			output.write(bytes);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -525,13 +524,12 @@ public class Server implements Runnable {
 	public synchronized void sendTCPToAll(byte[] message) {
 		for(Socket temp : connectedClients) {
 			
-			OutputStream DO;
+			OutputStream output;
 			
 			try {
-				DO = temp.getOutputStream();
+				output = temp.getOutputStream();
 
-				//DO.write(message.length);
-				DO.write(message);
+				output.write(message);
 			} catch (IOException e1) {
 				
 				e1.printStackTrace();
@@ -541,7 +539,7 @@ public class Server implements Runnable {
 	}
 	
 	/**
-	 * 
+	 * Gets the condition of  running.
 	 * @return running - true if the server is running else false.
 	 */
 
@@ -550,7 +548,7 @@ public class Server implements Runnable {
 	}
 	
 	/**
-	 * 
+	 * Gets the servers ID.
 	 * @return Integer - The servers ID.
 	 */
 	
@@ -638,6 +636,7 @@ public class Server implements Runnable {
 	
 	/**
 	 * Gets the server InettAddress.
+	 * 
 	 * @return InetAddress - Servers InetAddress.
 	 */
 	
