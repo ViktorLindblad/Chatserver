@@ -50,14 +50,9 @@ public class serverTestClient{
 	}
 	
 	public byte[] receive() {
-		byte[] buffer = null;
+		byte[] buffer = new byte[65535];
 		try {
-			
-			do{
-				int len = inStream.available();
-				buffer = PDU.readExactly(inStream, len);
-			}while(buffer.length == 0);
-			
+			inStream.read(buffer);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

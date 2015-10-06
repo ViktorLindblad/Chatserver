@@ -31,6 +31,7 @@ public class MessageHandler implements Runnable {
 		messageQueue = new LinkedList <byte[]>();
 		running = true;
 		join = false;
+		buffer = new byte[256];
 		
 		try{
 			inStream = socket.getInputStream();
@@ -56,13 +57,7 @@ public class MessageHandler implements Runnable {
 		while(running) {
 
 			try {
-				
-				do{
-					int len = inStream.available();
-					buffer = PDU.readExactly(inStream, len);
-				}while(buffer.length == 0);
-
-				
+				inStream.read(buffer);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

@@ -279,7 +279,7 @@ public class Server implements Runnable {
 					}
 					System.out.println("case: "+ca);
 					switch(ca) {
-						case(MESS)://MESS
+						case(MESS):
 
 							if(checkMessageLength(buffer)) {
 								
@@ -293,14 +293,11 @@ public class Server implements Runnable {
 							
 								MESS mess = new MESS
 										(message, messageName, false);
-								System.out.println("Message: "+message);
-								System.out.println("name" + messageName);
 								
 								sendTCPToAll(mess.toByteArray());
 							
 							} else {
-								clientSentCorruptMessage
-									(temp.getSocket());
+								clientSentCorruptMessage(messageName);
 								
 								ULEAVE leave = new 
 										ULEAVE(messageName);
@@ -308,12 +305,9 @@ public class Server implements Runnable {
 								connectedNames.remove(temp.getSocket());
 								removeQueue.add(temp);
 								sendTCPToAll(leave.toByteArray());
-								QUIT quit = new QUIT();
-								answerSocket(temp.getSocket(),
-													quit.toByteArray());
 							}
 						break;
-						case(QUIT)://QUIT
+						case(QUIT):
 							ULEAVE leave = new ULEAVE(messageName);
 							connectedNames.remove(temp.getSocket());
 							removeQueue.add(temp);
@@ -323,7 +317,7 @@ public class Server implements Runnable {
 							
 							
 						break;
-						case(JOIN)://JOIN
+						case(JOIN):
 							String name = readNameFromMessage(buffer);
 							
 							if(checkNameLength(buffer)) {
@@ -356,7 +350,7 @@ public class Server implements Runnable {
 							}
 							
 						break;
-						case(CHNICK)://CHNICK
+						case(CHNICK):
 							String newName = readNameFromMessage(buffer);
 							if(checkNameLength(buffer)) {
 								if(checkNick(newName)) {
@@ -366,7 +360,7 @@ public class Server implements Runnable {
 								} else {
 									UCNICK cnick = new 
 											UCNICK(messageName,newName);
-									
+									System.out.println("Succes");
 									sendTCPToAll(cnick.toByteArray());
 									
 									connectedNames
@@ -375,16 +369,15 @@ public class Server implements Runnable {
 							} else {
 
 								clientHasToLongName(temp.getSocket());
-								temp.setHasJoin(false);
+								
 								ULEAVE uleave = new 
 												ULEAVE(messageName);
-									System.out.println(messageName);
 
 									
 								connectedNames.remove
 												(temp.getSocket());
 								removeQueue.add(temp);
-
+								temp.setHasJoin(false);
 									
 								sendTCPToAll(uleave.toByteArray());
 								
@@ -529,10 +522,12 @@ public class Server implements Runnable {
 	 * Sending message to the client who sent Corrupt message.
 	 */
 	
-	private void clientSentCorruptMessage(Socket socket) {
-		String errorMessage = "You have send a corrupt message, goodbye!";
+	private void clientSentCorruptMessage(String name) {
+		String errorMessage = 
+				name+" have send a corrupt message, goodbye!";
 		MESS mess = new MESS(errorMessage, "", false);
-		answerSocket(socket,mess.toByteArray());
+		
+		sendTCPToAll(mess.toByteArray());
 	}
 	
 	/**
@@ -543,6 +538,7 @@ public class Server implements Runnable {
 	private void clientHasToLongName(Socket socket) {
 		String errorMessage = "Your nickname is either to long"+
 							" or to short, goodbye!";
+		
 		MESS mess = new MESS(errorMessage, "", false);
 		answerSocket(socket,mess.toByteArray());
 	}
@@ -566,6 +562,8 @@ public class Server implements Runnable {
 	 */
 	
 	private boolean checkMessageLength(byte[] bytes) {
+		
+		
 		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
 		return messageHasLength <= 65535;	
 	}

@@ -16,7 +16,6 @@ public class ServerMessageTest {
 	private static boolean isSetUpDone = true;
 	private static Server server;
 	private static String nickName = "";
-	private static byte[] buffer;
 	
 	@Before
 	public void setup() {
@@ -38,7 +37,7 @@ public class ServerMessageTest {
 		
 		SC.send(join.toByteArray());
 		
-		buffer = SC.receive();
+		byte[] buffer = SC.receive();
 		
 		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
 		System.out.println(length);
@@ -59,7 +58,7 @@ public class ServerMessageTest {
 		
 		SC.send(join.toByteArray());
 		
-		buffer = SC.receive();
+		byte[] buffer = SC.receive();
 		
 		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
 		System.out.println(length);
@@ -82,16 +81,18 @@ public class ServerMessageTest {
 		
 		SC.send(join.toByteArray());
 		
+		byte [] buffer = SC.receive();
+		
 		buffer = SC.receive();
 		
 		CHNICK chnick = new CHNICK(nickName);
-		
+
 		SC.send(chnick.toByteArray());
 		
 		buffer = SC.receive();
+
 		
 		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
-		System.out.println(length);
 		String message = PDU.stringReader(buffer,12,length);
 		
 		assertEquals("Your nickname is either to long"+
@@ -106,21 +107,23 @@ public class ServerMessageTest {
 		
 		SC.send(join.toByteArray());
 		
-		buffer = SC.receive();
+		byte[] buffer = SC.receive();
+				buffer = SC.receive();
 		
+
 		CHNICK chnick = new CHNICK("");
 		
 		SC.send(chnick.toByteArray());
 		
+		
 		buffer = SC.receive();
-		
 		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
-		System.out.println(length);
+
 		String message = PDU.stringReader(buffer,12,length);
-		
 		assertEquals("Your nickname is either to long"+
 				" or to short, goodbye!", message);
 	}
+	
 	
 	@Test
 	public void testWrongOPCode() {
@@ -133,7 +136,7 @@ public class ServerMessageTest {
 		
 		SC.send(bytes);
 		
-		buffer = SC.receive();
+		byte[] buffer = SC.receive();
 
 		
 		int length = (int)PDU.byteArrayToLong(buffer, 0, 1);

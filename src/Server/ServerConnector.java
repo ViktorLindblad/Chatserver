@@ -39,7 +39,7 @@ public class ServerConnector implements Runnable {
 						
 			try {
 				Socket temp = serverSocket.accept();
-				if(server.getSMH().size()<255){
+				if(server.getSMH().size()<255) {
 					queue.add(temp);
 				} else {
 					server.toManyClientsOnline(temp);
