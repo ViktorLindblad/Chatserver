@@ -74,7 +74,7 @@ public class Server implements Runnable {
 
 		this.TCPport = TCPport;
 		this.port = port;
-		serverName = "Lindblad";
+		serverName = "Lindblad's test server";
 		
 		connectedNames = new Hashtable<Socket,String>();
 		SMH = new ArrayList<MessageHandler> ();
@@ -355,13 +355,9 @@ public class Server implements Runnable {
 										(int)PDU
 										.byteArrayToLong(buffer, 1, 2);
 								
-								if(messageHasLength == 0) {//To short name
-									
-									nickNameIsZero(temp.getSocket());
-
-									removeQueue.add(temp);
-								} else {//To long name
-							
+								if(messageHasLength == 0) {
+									//To long/short name
+								
 									clientHasToLongName(temp.getSocket());
 									ULEAVE uleave = new 
 													ULEAVE(messageName);
@@ -399,10 +395,7 @@ public class Server implements Runnable {
 										.byteArrayToLong(buffer, 1, 2);
 								
 								if(messageHasLength == 0) {
-									
-									nickNameIsZero(temp.getSocket());
-							
-								} else {
+								
 									clientHasToLongName(temp.getSocket());
 									ULEAVE uleave = new 
 													ULEAVE(messageName);
@@ -564,11 +557,13 @@ public class Server implements Runnable {
 	}
 	
 	/**
-	 * Sending a message to the client who had chosen a to long name.
+	 * Sending a message to the client who had chosen a to long
+	 * or to short name.
 	 */
 	
 	private void clientHasToLongName(Socket socket) {
-		String errorMessage = "Your nickname is to long, goodbye!";
+		String errorMessage = "Your nickname is either to long"+
+							" or to short, goodbye!";
 		MESS mess = new MESS(errorMessage, "", false);
 		answerSocket(socket,mess.toByteArray());
 	}
@@ -579,17 +574,6 @@ public class Server implements Runnable {
 	
 	private void nickNameOccupied(Socket socket) {
 		String errorMessage = "Your nickname is occupied!";
-		MESS mess = new MESS(errorMessage, "", false);
-		answerSocket(socket,mess.toByteArray());
-	}
-	
-	/**
-	 * Sending a message to the client if the nickname has zero length.
-	 */
-	
-	private void nickNameIsZero(Socket socket) {
-		String errorMessage = "You can't have a nickname with zero length!\n"
-				+ "Try a different name.";
 		MESS mess = new MESS(errorMessage, "", false);
 		answerSocket(socket,mess.toByteArray());
 	}

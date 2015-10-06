@@ -16,6 +16,7 @@ public class MESS extends PDU{
 		byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
 		int lengthMessage = message.getBytes
 									(StandardCharsets.UTF_8).length;
+		System.out.println("mess: "+lengthMessage);
 		if(isClient){
 
 			time = 0;

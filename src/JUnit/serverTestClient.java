@@ -5,15 +5,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
-import PDU.JOIN;
 import PDU.PDU;
 import Server.Server;
 
 public class serverTestClient{
 
-	private  Socket s1;
-	private  OutputStream outStream1;
-	private  InputStream inStream1;
+	private  Socket s;
+	private  InputStream inStream;
+	private OutputStream outStream;
 	
 	public serverTestClient(Server server){
 		
@@ -22,27 +21,41 @@ public class serverTestClient{
 		}
 		
 		try {
-			s1 = new Socket(server.getAddress(),1555);
+			s = new Socket(server.getAddress(),1555);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 		try {
 			
-			outStream1 = s1.getOutputStream();
-			inStream1 = s1.getInputStream();
+			inStream = s.getInputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			outStream = s.getOutputStream();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
 	}
 
+	public void send(byte[] bytes) {
+		
+		try {
+			outStream.write(bytes);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public byte[] receive() {
 		byte[] buffer = null;
 		try {
 			
 			do{
-				int len = inStream1.available();
-				buffer = PDU.readExactly(inStream1, len);
+				int len = inStream.available();
+				buffer = PDU.readExactly(inStream, len);
 			}while(buffer.length == 0);
 			
 		} catch (IOException e) {
