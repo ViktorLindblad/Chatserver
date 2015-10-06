@@ -40,7 +40,6 @@ public class MESSIsNotClientTest {
 		nickLength = (int)PDU.byteArrayToLong(bytes, 2, 3);		
 		checksum = (int)PDU.byteArrayToLong(bytes, 3, 4);		
 		messageLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
-		System.out.println("messlength: " + messageLength);
 		time = PDU.byteArrayToLong(bytes, 8, 12);
 		messageBack = PDU.stringReader(bytes, 12, messageLength);
 		

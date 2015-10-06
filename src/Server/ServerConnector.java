@@ -2,7 +2,6 @@ package Server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
@@ -39,10 +38,11 @@ public class ServerConnector implements Runnable {
 		while(running) {
 						
 			try {
+				Socket temp = serverSocket.accept();
 				if(server.getSMH().size()<255){
-					queue.add(serverSocket.accept());
+					queue.add(temp);
 				} else {
-					throw new IllegalArgumentException("To many clients");
+					server.toManyClientsOnline(temp);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();

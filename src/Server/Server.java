@@ -636,17 +636,19 @@ public class Server implements Runnable {
 		return SMH;
 	}
 	
-	/**
-	 * Gets the servers hash table with sockets and names.  
-	 * @return Hash table - Servers hash table.
-	 */
-	
-	public synchronized Hashtable<Socket, String> getNames() {
-		return connectedNames;
+
+	public synchronized void toManyClientsOnline(Socket temp) {
+		String errorMessage 
+			= "Sorry, it's to many client online at the moment";
+		
+		MESS mess = new MESS(errorMessage, "", false);
+		answerSocket(temp,mess.toByteArray());
 	}
+
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 		Server server = new Server(1365,"itchy.cs.umu.se",1337);
 	}
+
 }

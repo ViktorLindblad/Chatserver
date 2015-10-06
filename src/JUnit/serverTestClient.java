@@ -15,7 +15,7 @@ public class serverTestClient{
 	private  OutputStream outStream1;
 	private  InputStream inStream1;
 	
-	public serverTestClient(Server server,String name){
+	public serverTestClient(Server server){
 		
 		for(int i=0; i<100000; i++){
 			
@@ -34,6 +34,21 @@ public class serverTestClient{
 			e.printStackTrace();
 		}
 
+	}
+
+	public byte[] receive() {
+		byte[] buffer = null;
+		try {
+			
+			do{
+				int len = inStream1.available();
+				buffer = PDU.readExactly(inStream1, len);
+			}while(buffer.length == 0);
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return buffer;
 	}
 
 }
