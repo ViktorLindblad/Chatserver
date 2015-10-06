@@ -47,8 +47,6 @@ public class Server implements Runnable {
 	
 	//Uses to get the name of a socket.
 	private Hashtable<Socket,String>  connectedNames;
-	//A list with all connected sockets.
-	private ArrayList<Socket> connectedClients;
 	//A list with all MessageHandlers.
 	private ArrayList<MessageHandler> SMH;
 	//A queue which is only used to remove MessageHandlers from SMH list.
@@ -79,7 +77,6 @@ public class Server implements Runnable {
 		serverName = "Lindblad";
 		
 		connectedNames = new Hashtable<Socket,String>();
-		connectedClients = new ArrayList<Socket> ();
 		SMH = new ArrayList<MessageHandler> ();
 		
 		removeQueue = new LinkedList<MessageHandler>();
@@ -98,7 +95,7 @@ public class Server implements Runnable {
 		setServerId(regServer());
 						
 		connector = 
-				new ServerConnector(server);
+				new ServerConnector(server,this);
 		
 		new Thread(connector).start(); 
 		
@@ -229,8 +226,7 @@ public class Server implements Runnable {
 					}
 															
 					ALIVE alive = 
-							new ALIVE(getConnectedClients().size(),
-														getServerId());
+							new ALIVE(SMH.size(),getServerId());
 							
 					send(alive.toByteArray());
 					
@@ -269,9 +265,8 @@ public class Server implements Runnable {
 				MessageHandler messageHandler = new 
 											MessageHandler(socket);
 				SMH.add(messageHandler);
-				
 			}
-			System.out.println("SMH: "+SMH.size());
+
 			for(MessageHandler temp : SMH) {
 				if(!temp.getMessageQueue().isEmpty()) {
 
@@ -312,7 +307,6 @@ public class Server implements Runnable {
 								ULEAVE leave = new 
 										ULEAVE(messageName);
 								
-								connectedClients.remove(temp.getSocket());
 								connectedNames.remove(temp.getSocket());
 								removeQueue.add(temp);
 								sendTCPToAll(leave.toByteArray());
@@ -323,7 +317,6 @@ public class Server implements Runnable {
 						break;
 						case(QUIT)://QUIT
 							ULEAVE leave = new ULEAVE(messageName);
-							connectedClients.remove(temp.getSocket());
 							connectedNames.remove(temp.getSocket());
 							removeQueue.add(temp);
 							sendTCPToAll(leave.toByteArray());
@@ -342,11 +335,10 @@ public class Server implements Runnable {
 									removeQueue.add(temp);
 									
 								} else {//Successfully join
-									connectedClients
-											.add(temp.getSocket());
-									System.out.println("Server: "+connectedClients.size());
+
 									connectedNames.put
 												(temp.getSocket(),name);
+									temp.setHasJoin(true);
 									
 									NICKS nick = 
 											new NICKS(connectedNames);
@@ -415,8 +407,7 @@ public class Server implements Runnable {
 									ULEAVE uleave = new 
 													ULEAVE(messageName);
 									
-									connectedClients.remove
-													(temp.getSocket());
+
 									
 									connectedNames.remove
 													(temp.getSocket());
@@ -435,7 +426,6 @@ public class Server implements Runnable {
 							
 							ULEAVE dleave = new ULEAVE(messageName);
 							
-							connectedClients.remove(temp.getSocket());
 							connectedNames.remove(temp.getSocket());
 							removeQueue.add(temp);
 							
@@ -453,7 +443,6 @@ public class Server implements Runnable {
 				
 				ULEAVE uleave = new ULEAVE(connectedNames.get(remove));
 				
-				connectedClients.remove(remove);
 				connectedNames.remove(remove);
 				
 				sendTCPToAll(uleave.toByteArray());
@@ -520,18 +509,19 @@ public class Server implements Runnable {
 	 */
 	
 	public synchronized void sendTCPToAll(byte[] message) {
-		for(Socket temp : connectedClients) {
+		for(MessageHandler temp : SMH) {
+			if(temp.getHasJoin()) {
+				OutputStream output;
 			
-			OutputStream output;
-			
-			try {
-				output = temp.getOutputStream();
-
-				output.write(message);
-			} catch (IOException e1) {
+				try {
+					output = temp.getSocket().getOutputStream();
+					output.write(message);
+				} catch (IOException e1) {
 				
-				e1.printStackTrace();
-				removeSocketQueue.add(temp);
+					e1.printStackTrace();
+					removeSocketQueue.add(temp.getSocket());
+					removeQueue.add(temp);
+				}
 			}
 		}
 	}
@@ -617,10 +607,6 @@ public class Server implements Runnable {
 		return messageHasLength <= 65535;	
 	}
 	
-	private synchronized ArrayList<Socket> getConnectedClients() {
-		return connectedClients;
-	}
-	
 	/**
 	 * Checks the name length.
 	 * Only works with JOIN and CHNICK PDU.
@@ -644,6 +630,10 @@ public class Server implements Runnable {
 	
 	public InetAddress getAddress() {
 		return server.getInetAddress();
+	}
+	
+	public synchronized ArrayList<MessageHandler> getSMH(){
+		return SMH;
 	}
 	
 	/**

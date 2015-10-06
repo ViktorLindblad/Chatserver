@@ -9,13 +9,18 @@ import PDU.JOIN;
 import PDU.PDU;
 import Server.Server;
 
-public class serverTestClient implements Runnable{
+public class serverTestClient{
 
 	private  Socket s1;
 	private  OutputStream outStream1;
 	private  InputStream inStream1;
 	
 	public serverTestClient(Server server,String name){
+		
+		for(int i=0; i<100000; i++){
+			
+		}
+		
 		try {
 			s1 = new Socket(server.getAddress(),1555);
 		} catch (IOException e1) {
@@ -28,31 +33,7 @@ public class serverTestClient implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		JOIN join = new JOIN(name);
-		try {
-			outStream1.write(join.toByteArray());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		new Thread(this).start();
-	}
-	
-	@Override
-	public void run() {
-		byte[] buffer;
-		while(true){
-			try {
-				
-				do{
-					int len = inStream1.available();
-					buffer = PDU.readExactly(inStream1, len);
-				}while(buffer.length == 0);	
-				
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+
 	}
 
 }

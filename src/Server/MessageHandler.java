@@ -14,7 +14,7 @@ public class MessageHandler implements Runnable {
 	private LinkedList <byte[]> messageQueue; 
 	private Socket socket;
 	private InputStream inStream;
-	private boolean running;
+	private boolean running, join;
 	private Thread thread;
 	private byte[] buffer;
 	
@@ -30,6 +30,7 @@ public class MessageHandler implements Runnable {
 		this.socket = socket;
 		messageQueue = new LinkedList <byte[]>();
 		running = true;
+		join = false;
 		
 		try{
 			inStream = socket.getInputStream();
@@ -82,7 +83,7 @@ public class MessageHandler implements Runnable {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-			}
+			}			
 			messageQueue.add(buffer);
 		}
 	}
@@ -130,4 +131,13 @@ public class MessageHandler implements Runnable {
 	public synchronized Socket getSocket() {
 		return socket;
 	}
+	
+	public synchronized boolean getHasJoin() {
+		return join;
+	}
+	
+	public synchronized void setHasJoin(boolean condition) {
+		join = condition;
+	}
+	
 }

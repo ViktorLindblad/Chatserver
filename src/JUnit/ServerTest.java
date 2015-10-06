@@ -29,12 +29,20 @@ public class ServerTest {
 			for(int i=1; i<=255; i++) {
 				serverTestClient SC = new serverTestClient(server,"vi"+i);
 			}
+			while(server.getSMH().size()<255){
+				System.out.println("running");
+			}
 		}
 	}
 	
 	@Test
-	public void toManyClients() {
+	public void test255clients() {
 
-		assertEquals(255,server.getNames().size());
+		assertEquals(255,server.getSMH().size());
+	}
+	
+	@Test
+	public void test256clients(){
+		
 	}
 }

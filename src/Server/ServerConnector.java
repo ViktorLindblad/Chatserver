@@ -1,6 +1,8 @@
 package Server;
 import java.io.IOException;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
@@ -11,19 +13,21 @@ import java.util.LinkedList;
 
 public class ServerConnector implements Runnable {
 
-	private ServerSocket server;
+	private ServerSocket serverSocket;
 	private LinkedList<Socket> queue;
 	private boolean running;
-
+	private Server server;
+	
 	/**
 	 * Creates a new ServerConnector.
 	 * 
 	 * @param server - The serverSocket where it listens after clients.
 	 */
-	public ServerConnector(ServerSocket server) {
+	public ServerConnector(ServerSocket serverSocket,Server server) {
 		queue = new LinkedList<Socket>();
-		this.server = server;
+		this.serverSocket = serverSocket;
 		running = true;
+		this.server = server;
 
 	}
 	
@@ -35,13 +39,16 @@ public class ServerConnector implements Runnable {
 		while(running) {
 						
 			try {
-				queue.add(server.accept());
+				if(server.getSMH().size()<255){
+					queue.add(serverSocket.accept());
+				} else {
+					throw new IllegalArgumentException("To many clients");
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
+			}		
 			
-			System.out.println("sC: "+queue.size());
-		
+			
 		}
 	}
 
