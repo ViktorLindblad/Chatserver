@@ -238,11 +238,15 @@ public class MessageHandler implements Runnable {
 			
 			break;
 		default:
-			sequenceLength = bytes.length;
+			corruptMessage(bytes);
 			break;
 		}
 		return sequenceLength;
 
+	}
+
+	private void corruptMessage(byte[] bytes) {
+		messageQueue.add(bytes);
 	}
 
 	private int calculatePads(int length) {

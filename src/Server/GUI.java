@@ -242,6 +242,9 @@ public class GUI implements ActionListener, Runnable{
 			clientconnect = true;
 			connected = false;
 			clientThread = null;
+			clients.setText(null);
+			clientNames = "";
+			
 		}
 		
 		if(e.getSource() == changeNick){
@@ -309,7 +312,7 @@ public class GUI implements ActionListener, Runnable{
 	 * @param string - The string to add.
 	 */
 
-	public synchronized void getStringFromClient(String string){
+	public synchronized void getStringFromClient(String string) {
 		if(string != ""){
 
 			chatString += string + "\n";
@@ -325,7 +328,7 @@ public class GUI implements ActionListener, Runnable{
 	 * @param string - The string to add.
 	 */
 	
-	public synchronized void getStringMessageFromClient(String string){
+	public synchronized void getStringMessageFromClient(String string) {
 		int length = string.length();
 		int i = 0;
 		int messlength = 50;

@@ -282,39 +282,31 @@ public class Server implements Runnable {
 					switch(ca) {
 						case(MESS):
 							
-							if(checkMessageLength(buffer)) {
-								
-								int messageLength = (int)PDU
-										.byteArrayToLong
-										(buffer, 4, 6);
-								
-								String message = PDU
-										.stringReader
-										(buffer, 12,messageLength);
-								System.out.println(message);
+							int messageLength = (int)PDU
+									.byteArrayToLong
+									(buffer, 4, 6);
 							
-								MESS mess = new MESS
-										(message, messageName, false);
-								
-								sendTCPToAll(mess.toByteArray());
+							String message = PDU
+									.stringReader
+									(buffer, 12,messageLength);
+							System.out.println(message);
+						
+							MESS mess = new MESS
+									(message, messageName, false);
 							
-							} else {
-								clientSentCorruptMessage(temp.getSocket());
-								
-								ULEAVE leave = new 
-										ULEAVE(messageName);
-								
-								connectedNames.remove(temp.getSocket());
-								removeQueue.add(temp);
-								sendTCPToAll(leave.toByteArray());
-							}
+							sendTCPToAll(mess.toByteArray());
+	
 						break;
 						case(QUIT):
-							answerSocket(temp.getSocket(),quit.toByteArray());
+							answerSocket(temp.getSocket(),
+									quit.toByteArray());
+						
 							closeSocket(temp.getSocket());
 							ULEAVE leave = new ULEAVE(messageName);
+							
 							connectedNames.remove(temp.getSocket());
 							removeQueue.add(temp);
+							
 							sendTCPToAll(leave.toByteArray());
 							
 							
@@ -324,69 +316,47 @@ public class Server implements Runnable {
 						case(JOIN):
 							String name = readNameFromMessage(buffer);
 							
-							if(checkNameLength(buffer)) {
-								if( checkNick(name)) {//Name is occupied.
+							if( checkNick(name)) {//Name is occupied.
 
-									nickNameOccupied(temp.getSocket());
-									
-								} else {//Successfully join
-									System.out.println("welcome");
-									connectedNames.put
-												(temp.getSocket(),name);
-									temp.setHasJoin(true);
-									
-									NICKS nick = 
-											new NICKS(connectedNames);
-									
-									answerSocket(temp.getSocket(),
-											nick.toByteArray());
+								nickNameOccupied(temp.getSocket());
 								
-									UJOIN join = new UJOIN(name);
-									sendTCPToAll(join.toByteArray());
-								}
+							} else {//Successfully join
+								System.out.println("welcome");
+								connectedNames.put
+											(temp.getSocket(),name);
+								temp.setHasJoin(true);
 								
-							} else {//To long/short name
+								NICKS nick = 
+										new NICKS(connectedNames);
 								
-								clientHasToLongName(temp.getSocket());
-								removeQueue.add(temp);
-								
+								answerSocket(temp.getSocket(),
+										nick.toByteArray());
+							
+								UJOIN join = new UJOIN(name);
+								sendTCPToAll(join.toByteArray());
 							}
+
 							
 						break;
 						case(CHNICK):
 							String newName = readNameFromMessage(buffer);
-							if(checkNameLength(buffer)) {
-								if(checkNick(newName)) {
-									
-									nickNameOccupied(temp.getSocket());
+							if(checkNick(newName)) {
 								
-								} else {
-									UCNICK cnick = new 
-											UCNICK(messageName,newName);
-									sendTCPToAll(cnick.toByteArray());
-									
-									connectedNames
-										.put(temp.getSocket(), newName);
-								}
+								nickNameOccupied(temp.getSocket());
+							
 							} else {
-
-								clientHasToLongName(temp.getSocket());
+								UCNICK cnick = new 
+										UCNICK(messageName,newName);
+								sendTCPToAll(cnick.toByteArray());
 								
-								ULEAVE uleave = new 
-												ULEAVE(messageName);
-
-									
-								connectedNames.remove
-												(temp.getSocket());
-								removeQueue.add(temp);
-									
-								sendTCPToAll(uleave.toByteArray());
-								
+								connectedNames
+									.put(temp.getSocket(), newName);
 							}
+	
 						break;
 						default:
-							answerSocket(temp.getSocket(),
-													quit.toByteArray());
+							clientSentCorruptMessage(temp.getSocket());
+							
 							if(messageName!=null){
 								ULEAVE dleave = new ULEAVE(messageName);
 								
@@ -532,22 +502,7 @@ public class Server implements Runnable {
 		QUIT quit = new QUIT();
 		answerSocket(socket,quit.toByteArray());
 	}
-	
-	/**
-	 * Sending a message to the client who had chosen a to long
-	 * or to short name.
-	 */
-	
-	private void clientHasToLongName(Socket socket) {
-		String errorMessage = "Your nickname is either to long"+
-							" or to short, goodbye!";
-		
-		MESS mess = new MESS(errorMessage, "", false);
-		answerSocket(socket,mess.toByteArray());
-		QUIT quit = new QUIT();
-		answerSocket(socket,quit.toByteArray());
-	}
-	
+
 	/**
 	 * Sending a message to the client if the nickname is occupied 
 	 */
@@ -556,36 +511,6 @@ public class Server implements Runnable {
 		String errorMessage = "Your nickname is occupied!";
 		MESS mess = new MESS(errorMessage, "", false);
 		answerSocket(socket,mess.toByteArray());
-	}
-	
-	/**
-	 * Checks the messages length.
-	 * Only works with MESS PDU
-	 * 
-	 * @param bytes - The message in bytes.
-	 * @return Boolean - true if message is not to long else false.
-	 */
-	
-	private boolean checkMessageLength(byte[] bytes) {
-		
-		
-		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
-		return messageHasLength <= 65535;	
-	}
-	
-	/**
-	 * Checks the name length.
-	 * Only works with JOIN and CHNICK PDU.
-	 * 
-	 * @param bytes - The name in bytes.
-	 * @return boolean - true if the name is not to long else false.
-	 */
-	
-	private boolean checkNameLength(byte[] bytes) {
-
-		int messageHasLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
-		return messageHasLength <= 255 && messageHasLength != 0;	
-		
 	}
 	
 	/**

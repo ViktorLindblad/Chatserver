@@ -500,6 +500,7 @@ public class Client implements Runnable {
 			} catch (SocketTimeoutException e) {
 				System.out.println("Time out reached!");
 				e.printStackTrace();
+				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
