@@ -2,20 +2,23 @@ package JUnit;
 
 import static org.junit.Assert.assertEquals;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
 import org.junit.Before;
 import org.junit.Test;
 
-import PDU.CHNICK;
 import PDU.JOIN;
+import PDU.MESS;
 import PDU.PDU;
 import Server.ByteSequenceBuilder;
+import Server.OpCode;
 import Server.Server;
 
 public class ServerMessageTest {
 
 	private static boolean isSetUpDone = true;
 	private static Server server;
-	private static String nickName = "";
 	
 	@Before
 	public void setup() {
@@ -24,107 +27,7 @@ public class ServerMessageTest {
 			server = new Server(1555,"itchy.cs.umu.se",1337);
 		}
 	}
-	
-	@Test
-	public void testToLongNickName() {
-		serverTestClient SC = new serverTestClient(server);
-		
-		for(int i = 0 ; i < 256 ; i ++) {
-			nickName += "A";
-		}
-		
-		JOIN join = new JOIN(nickName);
-		
-		SC.send(join.toByteArray());
-		
-		byte[] buffer = SC.receive();
-		
-		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
-		System.out.println(length);
-		String message = PDU.stringReader(buffer,12,length);
-		
-		assertEquals("Your nickname is either to long"+
-				" or to short, goodbye!", message);
-		
-	}
-	
-	@Test
-	public void testToShortNickName() {
-		serverTestClient SC = new serverTestClient(server);
-		
-		nickName = "";
-		
-		JOIN join = new JOIN(nickName);
-		
-		SC.send(join.toByteArray());
-		
-		byte[] buffer = SC.receive();
-		
-		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
-		System.out.println(length);
-		String message = PDU.stringReader(buffer,12,length);
-		
-		assertEquals("Your nickname is either to long"+
-				" or to short, goodbye!", message);
-		
-	}
-	
-	@Test
-	public void testToLongCHNickName() {
-		serverTestClient SC = new serverTestClient(server);
-		
-		for(int i = 0 ; i < 256 ; i ++) {
-			nickName += "A";
-		}
-		
-		JOIN join = new JOIN("adam");
-		
-		SC.send(join.toByteArray());
-		
-		byte [] buffer = SC.receive();
-		
-		buffer = SC.receive();
-		
-		CHNICK chnick = new CHNICK(nickName);
 
-		SC.send(chnick.toByteArray());
-		
-		buffer = SC.receive();
-
-		
-		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
-		String message = PDU.stringReader(buffer,12,length);
-		
-		assertEquals("Your nickname is either to long"+
-				" or to short, goodbye!", message);
-	}
-	
-	@Test
-	public void testToShortCHNickName() {
-		serverTestClient SC = new serverTestClient(server);
-
-		JOIN join = new JOIN("adam");
-		
-		SC.send(join.toByteArray());
-		
-		byte[] buffer = SC.receive();
-				buffer = SC.receive();
-		
-
-		CHNICK chnick = new CHNICK("");
-		
-		SC.send(chnick.toByteArray());
-		
-		
-		buffer = SC.receive();
-		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
-
-		String message = PDU.stringReader(buffer,12,length);
-		assertEquals("Your nickname is either to long"+
-				" or to short, goodbye!", message);
-	}
-	
-	
 	@Test
 	public void testWrongOPCode() {
 		serverTestClient SC = new serverTestClient(server);
@@ -143,5 +46,75 @@ public class ServerMessageTest {
 		
 		assertEquals(11,length);
 	}
+	
+	@Test
+	public void testSendHalfMessage() {
+		serverTestClient SC = new serverTestClient(server);
+		String nickName = "Tyra";
+		JOIN join = new JOIN(nickName);
+		byte [] first = Arrays.copyOfRange(join.toByteArray(), 0, 4);
+		SC.send(first);
+		for(int i = 0; i < 100000; i++){
+			
+		}
+		byte[] second = Arrays.copyOfRange(join.toByteArray(), 4, 8);
+		SC.send(second);
+		byte[] buffer = SC.receive();
+		int opCode = (int)PDU.byteArrayToLong(buffer, 0, 1);
+		
+		SC.send(second);
+		
+		
+		assertEquals(19, opCode);
+	}
+	
+	@Test
+	public void testToLongMassage() {
+		serverTestClient SC = new serverTestClient(server);
+		String nickName = "Bo";
+		
+//		JOIN join = new JOIN(nickName);
+//		SC.send(join.toByteArray());
+//		SC.receive();
+//		SC.receive();
+		
+		String message = "";
+		
+		for(int i = 0 ; i < 66000 ; i++){
+			 message += "I";
+		}
+		
+		MESS mess = new MESS(message, nickName, true);
+		SC.send(mess.toByteArray());
+				
+		byte[] buffer = SC.receive();
+		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
+		String messageBack = PDU.stringReader(buffer, 12, 12+length);
+		
+		assertEquals(" have send a corrupt message, goodbye!", messageBack);
+	}
+	/*
+	@Test 
+	public void testWrongPad(){
+		serverTestClient SC = new serverTestClient(server);
+		String name = "tyras";
+		byte[] names = name.getBytes(StandardCharsets.UTF_8);
+		byte[] b = new ByteSequenceBuilder(OpCode.JOIN.value)
+		.append((byte)0).pad()
+		.append(names).toByteArray();
+		
+		SC.send(b);
+		SC.receive();
+		SC.receive();
 
+		byte[] buffer = SC.receive();
+
+		int length = (int)PDU.byteArrayToLong(buffer, 1, 2);
+		String message = PDU.stringReader(buffer, 12, length);
+		
+		SC.send(Arrays.copyOfRange(b, 2, b.length));
+		
+		assertEquals(" have send a corrupt message, goodbye!",message);
+	}
+*/
 }

@@ -66,8 +66,9 @@ public class MessageHandler implements Runnable {
 				byte[] tempbuffer = new byte[0];
 				buffer = new byte[65535];
 				len = inStream.read(buffer);
+				
 				if(len < 0 ) {
-					
+
 				} else {
 					tempbuffer = new byte[len];
 					
@@ -78,6 +79,7 @@ public class MessageHandler implements Runnable {
 					int PDUlength = checkReceivedMessage(tempbuffer);
 					System.out.println("PDUlength: "+ PDUlength);
 					System.out.println("bytes: "+tempbuffer.length);
+					System.out.println("case: "+(int)PDU.byteArrayToLong(tempbuffer, 0, 1));
 					while((PDUlength - tempbuffer.length) != 0) {
 						
 						if(PDUlength - tempbuffer.length < 0) {
@@ -203,9 +205,8 @@ public class MessageHandler implements Runnable {
 		int messLength;
 		int sequenceLength = 0;
 		int pads=0;
-		
+
 		switch(op){
-		
 		case(MESS):
 			
 			nameLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
@@ -227,7 +228,7 @@ public class MessageHandler implements Runnable {
 			pads += calculatePads(nameLength);
 		
 			sequenceLength = 4 + nameLength + pads;
-						
+						System.out.println("join: "+ sequenceLength);
 			break;
 		case(CHNICK):
 			

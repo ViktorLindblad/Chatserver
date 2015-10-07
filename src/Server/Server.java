@@ -321,7 +321,6 @@ public class Server implements Runnable {
 								nickNameOccupied(temp.getSocket());
 								
 							} else {//Successfully join
-								System.out.println("welcome");
 								connectedNames.put
 											(temp.getSocket(),name);
 								temp.setHasJoin(true);
@@ -356,7 +355,7 @@ public class Server implements Runnable {
 						break;
 						default:
 							clientSentCorruptMessage(temp.getSocket());
-							
+							removeQueue.add(temp);
 							if(messageName!=null){
 								ULEAVE dleave = new ULEAVE(messageName);
 								
@@ -494,13 +493,17 @@ public class Server implements Runnable {
 	
 	private void clientSentCorruptMessage(Socket socket) {
 		String name = connectedNames.get(socket);
-		String errorMessage = 
-				name+" have send a corrupt message, goodbye!";
-		MESS mess = new MESS(errorMessage, "", false);
-		
-		sendTCPToAll(mess.toByteArray());
+		if(name!=null) {
+			String errorMessage = 
+					name+" have send a corrupt message, goodbye!";
+			MESS mess = new MESS(errorMessage, "", false);
+			
+			sendTCPToAll(mess.toByteArray());
+		}
 		QUIT quit = new QUIT();
 		answerSocket(socket,quit.toByteArray());
+		
+		
 	}
 
 	/**

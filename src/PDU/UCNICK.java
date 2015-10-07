@@ -10,6 +10,7 @@ public class UCNICK extends PDU{
 	public UCNICK(String oldName, String newName){
 		
 		long time = System.currentTimeMillis();
+		time = time /1000;
 		
 		bytes = new ByteSequenceBuilder(OpCode.UCNICK.value)
 		.append((byte)oldName.getBytes(StandardCharsets.UTF_8).length)
