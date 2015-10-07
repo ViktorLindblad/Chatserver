@@ -66,28 +66,32 @@ public class MessageHandler implements Runnable {
 				byte[] tempbuffer = new byte[0];
 				buffer = new byte[65535];
 				len = inStream.read(buffer);
-				tempbuffer = new byte[len];
-				
-				for(int i = 0; i < len; i++ ) {
-					tempbuffer[i] = buffer[i];
-				}
-				
-				int PDUlength = checkReceivedMessage(tempbuffer);
-				System.out.println("PDUlength: "+ PDUlength);
-				System.out.println("bytes: "+tempbuffer.length);
-				while((PDUlength - tempbuffer.length) != 0) {
+				if(len < 0 ) {
 					
-					if(PDUlength - tempbuffer.length < 0) {
+				} else {
+					tempbuffer = new byte[len];
+					
+					for(int i = 0; i < len; i++ ) {
+						tempbuffer[i] = buffer[i];
+					}
+					
+					int PDUlength = checkReceivedMessage(tempbuffer);
+					System.out.println("PDUlength: "+ PDUlength);
+					System.out.println("bytes: "+tempbuffer.length);
+					while((PDUlength - tempbuffer.length) != 0) {
 						
-						addNextMessage(tempbuffer,PDUlength);
-						tempbuffer = Arrays.copyOfRange(tempbuffer,
-										PDUlength, tempbuffer.length);
-						
-						PDUlength = checkReceivedMessage(tempbuffer);
-						
-					} else if(PDUlength - tempbuffer.length > 0) {
-						tempbuffer = waitForBytes(tempbuffer, PDUlength);
-						PDUlength = checkReceivedMessage(tempbuffer);
+						if(PDUlength - tempbuffer.length < 0) {
+							
+							addNextMessage(tempbuffer,PDUlength);
+							tempbuffer = Arrays.copyOfRange(tempbuffer,
+											PDUlength, tempbuffer.length);
+							
+							PDUlength = checkReceivedMessage(tempbuffer);
+							
+						} else if(PDUlength - tempbuffer.length > 0) {
+							tempbuffer = waitForBytes(tempbuffer, PDUlength);
+							PDUlength = checkReceivedMessage(tempbuffer);
+						}
 					}
 				}
 				
@@ -95,21 +99,7 @@ public class MessageHandler implements Runnable {
 				e.printStackTrace();
 			}
 			if(PDU.byteArrayToLong(buffer, 0, 1)==11) {
-	    		try {
-	    			inStream.close();
-	    		} catch (IOException e) {
-	    			e.printStackTrace();
-	    		}
-	    		try {
-	    			socket.close();
-	    		} catch (IOException e) {
-	    			e.printStackTrace();
-	    		}
-	    		try {
-					thread.join();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+				running = false;
 			}			
 			messageQueue.add(buffer);
 		}

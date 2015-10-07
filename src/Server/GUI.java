@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Random;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -222,7 +223,8 @@ public class GUI implements ActionListener, Runnable{
 		if(e.getSource() == connect){
 			
 			if(clientconnect) {
-
+				Random random = new Random();
+				port += random.nextInt(1000);
 				client = new  Client("itchy.cs.umu.se",this,port,1337);
 				clientThread = new Thread(client);
 				clientThread.start();
@@ -427,10 +429,10 @@ public class GUI implements ActionListener, Runnable{
 			
 			if(getQuit()&&socket!=null) {
 				setQuit(false);
-				
 				QUIT quit = new QUIT();
 				sendTCP(quit.toByteArray());
 				connected = false;
+				socket = null;
 
 			}
 			if(client != null && !client.getMessageQueue().isEmpty()){
@@ -485,6 +487,7 @@ public class GUI implements ActionListener, Runnable{
 			break;
 			
 			case(QUIT):
+				System.out.println("CLOSE");
 				client.closeClientsSocket();
 				
 			break;

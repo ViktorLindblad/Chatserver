@@ -214,33 +214,36 @@ public class Client implements Runnable {
 			buffer = new byte[65535];
 			
 			len = inStream.read(buffer);
-			
-			tempbuffer = new byte[len];
-			
-			for(int i = 0; i < len; i++ ) {
-				tempbuffer[i] = buffer[i];
-			}
-			System.out.println("tempbuffer: "+tempbuffer.length);
-			
-			int PDUlength = checkReceivedMessage(tempbuffer);
-			System.out.println(PDUlength);
-			if(PDUlength == tempbuffer.length) {
-				messageQueue.add(tempbuffer);
-			}
-			
-			while((PDUlength - tempbuffer.length) != 0) {
+			if(len < 0){
+				return;
+			} else {
+				tempbuffer = new byte[len];
+
+				for(int i = 0; i < len; i++ ) {
+					tempbuffer[i] = buffer[i];
+				}
+				System.out.println("tempbuffer: "+tempbuffer.length);
 				
-				if(PDUlength - tempbuffer.length < 0) {
+				int PDUlength = checkReceivedMessage(tempbuffer);
+				System.out.println(PDUlength);
+				if(PDUlength == tempbuffer.length) {
+					messageQueue.add(tempbuffer);
+				}
+				
+				while((PDUlength - tempbuffer.length) != 0) {
 					
-					addNextMessage(tempbuffer,PDUlength);
-					tempbuffer = Arrays.copyOfRange(tempbuffer,
-									PDUlength, tempbuffer.length);
-					
-					PDUlength = checkReceivedMessage(tempbuffer);
-					
-				} else if(PDUlength - tempbuffer.length > 0) {
-					tempbuffer = waitForBytes(tempbuffer, PDUlength);
-					PDUlength = checkReceivedMessage(tempbuffer);
+					if(PDUlength - tempbuffer.length < 0) {
+						
+						addNextMessage(tempbuffer,PDUlength);
+						tempbuffer = Arrays.copyOfRange(tempbuffer,
+										PDUlength, tempbuffer.length);
+						
+						PDUlength = checkReceivedMessage(tempbuffer);
+						
+					} else if(PDUlength - tempbuffer.length > 0) {
+						tempbuffer = waitForBytes(tempbuffer, PDUlength);
+						PDUlength = checkReceivedMessage(tempbuffer);
+					}
 				}
 			}
 			
@@ -405,10 +408,10 @@ public class Client implements Runnable {
 	 * server else false.
 	 */
 	
-	private void connectToTCP(int tcpPort,Inet4Address ip) {
+	private boolean connectToTCP(int tcpPort,Inet4Address ip) {
 
 		try{
-			socket = new Socket("localhost",tcpPort);
+			socket = new Socket(ip.getCanonicalHostName(),tcpPort);
 			outStream = socket.getOutputStream();
 			
 			inStream = socket.getInputStream();
@@ -426,10 +429,38 @@ public class Client implements Runnable {
 		sendTCP(join.toByteArray());
 
 		receiveTCP();
-		gui.setSocket(socket);
+		
+		if(PDU.byteArrayToLong(buffer, 0, 1) == 11) {
+			try {
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return true;
+		} else {
+			if(PDU.byteArrayToLong(buffer, 0, 1) == 10 &&
+					checkIfOccupied()){
+				
+				return false;
+			} else {
+				gui.setSocket(socket);
+				return true;
+			}
+		}
 		
 	}
 	
+	private boolean checkIfOccupied() {
+		int server = (int)PDU.byteArrayToLong(buffer, 2, 3);
+		int messLength = (int)PDU.byteArrayToLong(buffer, 4, 6);
+		if(server==0){
+			String message = PDU.stringReader(buffer, 12, messLength);
+			return message.equals("Your nickname is occupied!");
+		} else {
+			return false;
+		}
+	}
+
 	/**
 	 * Connect to the name server with the given IP address 
 	 * and creates a new multicastSocket with the field port.
@@ -442,7 +473,6 @@ public class Client implements Runnable {
 		try {
 			address = InetAddress.getByName(ip);
 			multicastSocket = new MulticastSocket(UDPport);
-			System.out.println(address);
 		}	catch (SocketException e) {
 			e.printStackTrace();
 			return false;
@@ -487,7 +517,6 @@ public class Client implements Runnable {
 										(data,data.length,address,port);
 		try {
 			multicastSocket.send(packet);
-			multicastSocket.setSoTimeout(5000);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -508,6 +537,7 @@ public class Client implements Runnable {
 		while(running) {
 		
 			if(gui.getUpdate()) {
+				System.out.println("Get update");
 				getlist();
 				infoToClient();
 				gui.setUpdate(false);
@@ -521,12 +551,13 @@ public class Client implements Runnable {
 			}
 			
 			if(server != 0 && server <= serverNames.size() ) {
-				chooseNickName();
+				do {
+					chooseNickName();
 				
-				gui.getStringFromClient("Your nickname is: "+name);
+					gui.getStringFromClient("Your nickname is: "+name);
 				
-				connectToTCP(serverPort.get(server-1),
-								adresses.get(server-1));
+				} while(!connectToTCP(serverPort.get(server-1),
+								adresses.get(server-1)));
 				
 				server = 0;
 			}
@@ -545,6 +576,8 @@ public class Client implements Runnable {
 	 */
 	
 	public synchronized void closeClientsSocket() {
+		System.out.println("Closing");
+		multicastSocket.close();
 		try {
 			outStream.close();
 		} catch (IOException e) {
@@ -560,6 +593,7 @@ public class Client implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
 	}
 
 	/**

@@ -10,6 +10,8 @@ public class MESS extends PDU{
 	public MESS(String message, String name, boolean isClient) {
 		
 		long time = System.currentTimeMillis();
+		time = time * 1000;
+		time = time /1000;
 		int checksum = 0;
 		int checkLength;
 		int length = 0;

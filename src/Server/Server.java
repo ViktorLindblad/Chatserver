@@ -277,6 +277,7 @@ public class Server implements Runnable {
 						messageName = connectedNames
 											.get(temp.getSocket());
 					}
+					QUIT quit = new QUIT();
 					System.out.println("case: "+ca);
 					switch(ca) {
 						case(MESS):
@@ -298,7 +299,7 @@ public class Server implements Runnable {
 								sendTCPToAll(mess.toByteArray());
 							
 							} else {
-								clientSentCorruptMessage(messageName);
+								clientSentCorruptMessage(temp.getSocket());
 								
 								ULEAVE leave = new 
 										ULEAVE(messageName);
@@ -309,6 +310,8 @@ public class Server implements Runnable {
 							}
 						break;
 						case(QUIT):
+							answerSocket(temp.getSocket(),quit.toByteArray());
+							closeSocket(temp.getSocket());
 							ULEAVE leave = new ULEAVE(messageName);
 							connectedNames.remove(temp.getSocket());
 							removeQueue.add(temp);
@@ -325,10 +328,9 @@ public class Server implements Runnable {
 								if( checkNick(name)) {//Name is occupied.
 
 									nickNameOccupied(temp.getSocket());
-									removeQueue.add(temp);
 									
 								} else {//Successfully join
-
+									System.out.println("welcome");
 									connectedNames.put
 												(temp.getSocket(),name);
 									temp.setHasJoin(true);
@@ -377,14 +379,12 @@ public class Server implements Runnable {
 								connectedNames.remove
 												(temp.getSocket());
 								removeQueue.add(temp);
-								temp.setHasJoin(false);
 									
 								sendTCPToAll(uleave.toByteArray());
 								
 							}
 						break;
 						default:
-							QUIT quit = new QUIT();
 							answerSocket(temp.getSocket(),
 													quit.toByteArray());
 							if(messageName!=null){
@@ -475,10 +475,9 @@ public class Server implements Runnable {
 	public synchronized void sendTCPToAll(byte[] message) {
 		for(MessageHandler temp : SMH) {
 			
-			if(temp.getHasJoin()) {
-			System.out.println("sending");
+			if(connectedNames.get(temp.getSocket())!=null) {
 				OutputStream output;
-			
+			System.out.println("sending to: "+connectedNames.get(temp.getSocket()));
 				try {
 					output = temp.getSocket().getOutputStream();
 					output.write(message);
@@ -523,12 +522,15 @@ public class Server implements Runnable {
 	 * Sending message to the client who sent Corrupt message.
 	 */
 	
-	private void clientSentCorruptMessage(String name) {
+	private void clientSentCorruptMessage(Socket socket) {
+		String name = connectedNames.get(socket);
 		String errorMessage = 
 				name+" have send a corrupt message, goodbye!";
 		MESS mess = new MESS(errorMessage, "", false);
 		
 		sendTCPToAll(mess.toByteArray());
+		QUIT quit = new QUIT();
+		answerSocket(socket,quit.toByteArray());
 	}
 	
 	/**
@@ -542,6 +544,8 @@ public class Server implements Runnable {
 		
 		MESS mess = new MESS(errorMessage, "", false);
 		answerSocket(socket,mess.toByteArray());
+		QUIT quit = new QUIT();
+		answerSocket(socket,quit.toByteArray());
 	}
 	
 	/**
@@ -607,6 +611,19 @@ public class Server implements Runnable {
 		answerSocket(temp,mess.toByteArray());
 	}
 
+	private void closeSocket(Socket socket){
+		try {
+			socket.getInputStream().close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
 	
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
