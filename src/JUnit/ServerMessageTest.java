@@ -27,7 +27,7 @@ public class ServerMessageTest {
 			server = new Server(1555,"itchy.cs.umu.se",1337);
 		}
 	}
-
+/*
 	@Test
 	public void testWrongOPCode() {
 		serverTestClient SC = new serverTestClient(server);
@@ -66,7 +66,7 @@ public class ServerMessageTest {
 		
 		
 		assertEquals(19, opCode);
-	}
+	}*/
 	
 	@Test
 	public void testToLongMassage() {
@@ -86,12 +86,11 @@ public class ServerMessageTest {
 		
 		MESS mess = new MESS(message, nickName, true);
 		SC.send(mess.toByteArray());
-				
+		SC.receive();
 		byte[] buffer = SC.receive();
-		int length = (int)PDU.byteArrayToLong(buffer, 4, 6);
-		String messageBack = PDU.stringReader(buffer, 12, 12+length);
-		
-		assertEquals(" have send a corrupt message, goodbye!", messageBack);
+		int length = (int)PDU.byteArrayToLong(buffer, 0, 1);
+		System.out.println("lnegth junit: "+length);
+		assertEquals(11, length);
 	}
 	/*
 	@Test 

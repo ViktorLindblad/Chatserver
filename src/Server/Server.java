@@ -277,8 +277,10 @@ public class Server implements Runnable {
 						messageName = connectedNames
 											.get(temp.getSocket());
 					}
+					if(messageName == null ) {
+						messageName = "Corrupt";
+					}
 					QUIT quit = new QUIT();
-					System.out.println("case: "+ca);
 					switch(ca) {
 						case(MESS):
 							
@@ -321,6 +323,10 @@ public class Server implements Runnable {
 								nickNameOccupied(temp.getSocket());
 								
 							} else {//Successfully join
+								if(name.length()==0){
+									clientSentCorruptMessage(temp.getSocket());
+									removeQueue.add(temp);
+								}
 								connectedNames.put
 											(temp.getSocket(),name);
 								temp.setHasJoin(true);
@@ -344,6 +350,10 @@ public class Server implements Runnable {
 								nickNameOccupied(temp.getSocket());
 							
 							} else {
+								if(newName.length()==0){
+									clientSentCorruptMessage(temp.getSocket());
+									removeQueue.add(temp);
+								}
 								UCNICK cnick = new 
 										UCNICK(messageName,newName);
 								sendTCPToAll(cnick.toByteArray());
