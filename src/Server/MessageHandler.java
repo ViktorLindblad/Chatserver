@@ -72,9 +72,9 @@ public class MessageHandler implements Runnable {
 					tempbuffer[i] = buffer[i];
 				}
 				
-				
 				int PDUlength = checkReceivedMessage(tempbuffer);
-				
+				System.out.println("PDUlength: "+ PDUlength);
+				System.out.println("bytes: "+tempbuffer.length);
 				while((PDUlength - tempbuffer.length) != 0) {
 					
 					if(PDUlength - tempbuffer.length < 0) {
@@ -136,6 +136,7 @@ public class MessageHandler implements Runnable {
 				for(int i = 0; i < len; i++ ) {
 					tempbuffer[i] = buffer[i];
 				}
+				System.out.println("message: " +tempbuffer.length);
 				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -247,7 +248,7 @@ public class MessageHandler implements Runnable {
 			
 			break;
 		default:
-			
+			sequenceLength = bytes.length;
 			break;
 		}
 		return sequenceLength;

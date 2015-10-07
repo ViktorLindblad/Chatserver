@@ -27,13 +27,10 @@ public class Client implements Runnable {
 	//Constants for OpCodes
 	private static final int MESS = 10, QUIT = 11, UJOIN = 16, 
 							ULEAVE = 17, UCNICK = 18, NICKS = 19;
-	
 	//Sockets
 	private MulticastSocket multicastSocket;//UDP socket
 	private Socket socket;//TCP socket
-	
-	private MessageHandler messageHandler;
-	
+		
 	//Lists
 	private LinkedList<byte[]> messageQueue;
 	//A list with all server names.
@@ -44,8 +41,7 @@ public class Client implements Runnable {
 	private ArrayList<Inet4Address> adresses;
 	//A list with number of clients in a server.
 	private ArrayList<Integer> serverClients;
-	//A list with nick names online at the connected server.
-	private ArrayList<String> nickNames;
+
 	
 	private OutputStream outStream;
 	private InputStream inStream;
@@ -99,7 +95,6 @@ public class Client implements Runnable {
 		serverPort = new ArrayList<Integer>();
 		adresses = new ArrayList<Inet4Address>();
 		serverClients = new ArrayList<Integer>();
-		nickNames = new ArrayList<String>();
 		
 		GETLIST getList = new GETLIST();
 		
@@ -217,15 +212,21 @@ public class Client implements Runnable {
 			int len;
 			byte[] tempbuffer = new byte[0];
 			buffer = new byte[65535];
+			
 			len = inStream.read(buffer);
+			
 			tempbuffer = new byte[len];
 			
 			for(int i = 0; i < len; i++ ) {
 				tempbuffer[i] = buffer[i];
 			}
-			
+			System.out.println("tempbuffer: "+tempbuffer.length);
 			
 			int PDUlength = checkReceivedMessage(tempbuffer);
+			System.out.println(PDUlength);
+			if(PDUlength == tempbuffer.length) {
+				messageQueue.add(tempbuffer);
+			}
 			
 			while((PDUlength - tempbuffer.length) != 0) {
 				
@@ -246,6 +247,7 @@ public class Client implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 			
 	}
 	
@@ -320,7 +322,7 @@ public class Client implements Runnable {
 		
 			break;
 		default:
-			
+			sequenceLength = bytes.length;
 			break;
 		}
 		return sequenceLength;
@@ -403,7 +405,7 @@ public class Client implements Runnable {
 	 * server else false.
 	 */
 	
-	private boolean connectToTCP(int tcpPort,Inet4Address ip) {
+	private void connectToTCP(int tcpPort,Inet4Address ip) {
 
 		try{
 			socket = new Socket("localhost",tcpPort);
@@ -424,19 +426,7 @@ public class Client implements Runnable {
 		sendTCP(join.toByteArray());
 
 		receiveTCP();
-		if(PDU.byteArrayToLong(buffer, 0, 1)==10) {
-			checkMessage(buffer);
-			try {
-				socket.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return true;
-		} else {
-			checkMessage(buffer);
-			gui.setSocket(socket);
-			return false;
-		}
+		gui.setSocket(socket);
 		
 	}
 	
@@ -531,195 +521,30 @@ public class Client implements Runnable {
 			}
 			
 			if(server != 0 && server <= serverNames.size() ) {
-				do {
-					chooseNickName();
+				chooseNickName();
 				
-					gui.getStringFromClient("Your nickname is: "+name);
+				gui.getStringFromClient("Your nickname is: "+name);
 				
-				} while(connectToTCP(serverPort.get(server-1),
-								adresses.get(server-1)));
+				connectToTCP(serverPort.get(server-1),
+								adresses.get(server-1));
 				
 				server = 0;
 			}
 			while(gui.getConnected()) {
-				if(!messageHandler.getMessageQueue().isEmpty()){
-					checkMessage(messageHandler.getMessageQueue()
-							.removeFirst());
-				}
+				receiveTCP();
+
 			}
 		}
 	}
 	
-	/**
-	 * Check the received message from the server.
-	 * It will check which kind of message it is and act after that.
-	 * 
-	 * @param bytes - The message to check in bytes.
-	 */
-	
-	private void checkMessage(byte[] bytes) {
-		int ca = (int)PDU.byteArrayToLong(bytes, 0, 1);
-		int length;
-		int time;
-		String name = "";
-		
-		switch(ca) {
-			case(MESS):
-				String messname;
-				int nameLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
-				length = (int)PDU.byteArrayToLong(bytes, 4, 6);
 
-				time = (int)PDU.byteArrayToLong(bytes, 8, 12);
-				String message = PDU.stringReader(bytes, 12,length);
-				
-				if(length % 4 != 0) {
-					length += 4 - ( length % 4);
-				}
-				
-				if(nameLength == 0){
-					messname = "Server";
-				} else {
-					 messname = PDU.stringReader
-							 		(bytes, 12+length,nameLength);
-				}
-				
-				SimpleDateFormat sdf = new 
-									SimpleDateFormat("MMM dd,yyyy HH:mm");    
-				Date resultdate = new Date(time);
-				
-				
-				
-				String mess = sdf.format(resultdate)+": "
-											+messname+" said: "+message;
-				gui.getStringMessageFromClient(mess);
-				
-			break;
-			
-			case(QUIT):
-				closeClientsSocket();
-				
-			break;
-			
-			case(UJOIN):
-				
-				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
-				time = (int) PDU.byteArrayToLong(bytes, 4, 8);
-				
-				name = PDU.stringReader(bytes, 8, length);
-				
-				boolean don = true;
-				for(String temp : nickNames){
-					if(temp.equals(name)){
-						don = false;
-					}
-				}
-				if(don){
-					nickNames.add(name);
-					gui.getNameFromClient(nickNames);
-				}
-				
-				
-				gui.getStringFromClient(name+" joined chatroom at: " 
-															+time);
-				
-			break;
-			
-			case(ULEAVE):
-				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
-			
-				name = PDU.stringReader(bytes, 8, length);
-			
-				for(int i = 0; i < nickNames.size(); i++ ){
-					if(nickNames.get(i).equals(name)){
-						nickNames.remove(i);
-					}
-				}
-				gui.getNameFromClient(nickNames);
-				gui.getStringFromClient(name+" leaved the chatroom");
-			break;
-			
-			case(UCNICK):
-				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
-				int secondLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
-				time = (int)PDU.byteArrayToLong(bytes, 4, 8);
-				
-				name = PDU.stringReader(bytes, 8, length);
-				
-				if(length%4!=0){
-					length += 4 - (length % 4);
-				}
-				
-				String name2 = PDU.stringReader
-							(bytes, 8+length, secondLength);
-
-		
-			for(int i = 0; i < nickNames.size(); i++ ){
-				if(nickNames.get(i).equals(name)){
-					nickNames.set(i, name2);
-					gui.getNameFromClient(nickNames);
-				}
-			}
-			String changeNick = "Time: "+String.valueOf(time)
-					+"Old nick: "+name+"New nick: "+name2;
-			
-			gui.getStringFromClient(changeNick);
-			
-			
-			break;
-			
-			case(NICKS):
-				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
-				int index = 4;
-				boolean condition;
-				System.out.println("NICKS " +length);
-				for(int i = 0; i < length; i++){
-					condition = true;
-					name = "";
-					do{
-						byte[] tempbyte = Arrays.copyOfRange
-								(bytes, index, index+1);
-						
-						String character = PDU.bytaArrayToString
-								(tempbyte, 1);
-						
-						if(character.equals("\0")){
-							condition = false;
-						} else {
-							name += character;
-						}
-						
-						index++;
-					}while(condition);
-					
-					boolean dont = true;
-					
-					for(String temp : nickNames){
-						
-						if(name.equals(temp)){
-							dont = false;
-						}
-					}
-
-					if(dont){
-						nickNames.add(name);
-					}
-				}
-
-				gui.getNameFromClient(nickNames);
-
-			break;
-			
-			default:
-			break;
-		}
-	}
 	
 	/**
 	 * Closes the clients socket, outputStream, dataInput and
 	 * inputStream.
 	 */
 	
-	private void closeClientsSocket() {
+	public synchronized void closeClientsSocket() {
 		try {
 			outStream.close();
 		} catch (IOException e) {
@@ -773,6 +598,10 @@ public class Client implements Runnable {
 				choosen = true;
 			}
 		}while(!choosen);
+	}
+	
+	public synchronized LinkedList<byte[]> getMessageQueue(){
+		return messageQueue;
 	}
 	
 	@SuppressWarnings("unused")

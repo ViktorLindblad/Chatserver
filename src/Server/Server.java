@@ -82,7 +82,7 @@ public class Server implements Runnable {
 		removeQueue = new LinkedList<MessageHandler>();
 		removeSocketQueue = new LinkedList<Socket>();
 
-		buffer = new byte[256];
+		buffer = new byte[65535];
 		
 		createTCP();
 		if(!connect(ip)) {
@@ -271,7 +271,7 @@ public class Server implements Runnable {
 				if(!temp.getMessageQueue().isEmpty()) {
 					
 					buffer = temp.getMessageQueue().remove();
-					System.out.println("message: "+buffer.length);					
+					System.out.println("message from queue: "+buffer.length);					
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
 					if(ca!=12) {
 						messageName = connectedNames
@@ -280,7 +280,7 @@ public class Server implements Runnable {
 					System.out.println("case: "+ca);
 					switch(ca) {
 						case(MESS):
-
+							
 							if(checkMessageLength(buffer)) {
 								
 								int messageLength = (int)PDU
@@ -290,6 +290,7 @@ public class Server implements Runnable {
 								String message = PDU
 										.stringReader
 										(buffer, 12,messageLength);
+								System.out.println(message);
 							
 								MESS mess = new MESS
 										(message, messageName, false);
@@ -360,7 +361,6 @@ public class Server implements Runnable {
 								} else {
 									UCNICK cnick = new 
 											UCNICK(messageName,newName);
-									System.out.println("Succes");
 									sendTCPToAll(cnick.toByteArray());
 									
 									connectedNames
@@ -460,7 +460,6 @@ public class Server implements Runnable {
 	private String readNameFromMessage(byte[] bytes) {
 		
 		int nameLength = (int)PDU.byteArrayToLong(bytes,1,2);
-		System.out.println("namelenght "+nameLength);
 				
 		return PDU.stringReader(bytes, 4, nameLength);
 
@@ -475,7 +474,9 @@ public class Server implements Runnable {
 	
 	public synchronized void sendTCPToAll(byte[] message) {
 		for(MessageHandler temp : SMH) {
+			
 			if(temp.getHasJoin()) {
+			System.out.println("sending");
 				OutputStream output;
 			
 				try {

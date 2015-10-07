@@ -6,7 +6,10 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 import javax.swing.JButton;
@@ -19,6 +22,7 @@ import javax.swing.ScrollPaneConstants;
 
 import PDU.CHNICK;
 import PDU.MESS;
+import PDU.PDU;
 import PDU.QUIT;
 
 /**
@@ -28,8 +32,15 @@ import PDU.QUIT;
 
 public class GUI implements ActionListener, Runnable{
 
+	//Constants for OpCodes
+	private static final int MESS = 10, QUIT = 11, UJOIN = 16, 
+							ULEAVE = 17, UCNICK = 18, NICKS = 19;
+	
 	private JPanel panel;
 
+	//A list with nick names online at the connected server.
+	private ArrayList<String> nickNames;
+	
 	private boolean connected, updateServers, quitserver, running,
 					clientconnect;
 	
@@ -39,6 +50,8 @@ public class GUI implements ActionListener, Runnable{
 	private JButton quit;
 	private JButton changeNick;
 	private JButton clearText;
+	
+	private Client client;
 	
 	private LinkedList<String> queue;
 	private LinkedList<String> nickQueue;
@@ -70,6 +83,9 @@ public class GUI implements ActionListener, Runnable{
 	 */
 	
 	public GUI(int port){
+		
+		nickNames = new ArrayList<String>();
+
 		this.port = port;
 		socket = null;
 		updateServers = false;
@@ -207,7 +223,7 @@ public class GUI implements ActionListener, Runnable{
 			
 			if(clientconnect) {
 
-				Client client = new  Client("itchy.cs.umu.se",this,port,1337);
+				client = new  Client("itchy.cs.umu.se",this,port,1337);
 				clientThread = new Thread(client);
 				clientThread.start();
 				clientconnect = false;
@@ -399,7 +415,6 @@ public class GUI implements ActionListener, Runnable{
 			
 			if(!getQueue().isEmpty()&&socket!=null){
 				message = getQueue().removeFirst();
-				System.out.println(message);
 				MESS mess = new MESS(message, name, true);
 				sendTCP(mess.toByteArray());
 			}
@@ -407,7 +422,6 @@ public class GUI implements ActionListener, Runnable{
 	
 				message = getNickQueue().removeFirst();
 				CHNICK mess = new CHNICK(message);
-				System.out.println("chnick "+message);
 				sendTCP(mess.toByteArray());	
 			}
 			
@@ -419,8 +433,175 @@ public class GUI implements ActionListener, Runnable{
 				connected = false;
 
 			}
+			if(client != null && !client.getMessageQueue().isEmpty()){
+				checkMessage(client.getMessageQueue().removeFirst());
+			}
 		}
 	}	
+	
+	/**
+	 * Check the received message from the server.
+	 * It will check which kind of message it is and act after that.
+	 * 
+	 * @param bytes - The message to check in bytes.
+	 */
+	
+	private void checkMessage(byte[] bytes) {
+		int ca = (int)PDU.byteArrayToLong(bytes, 0, 1);
+		int length;
+		int time;
+		String name = "";
+		
+		switch(ca) {
+			case(MESS):
+				String messname;
+				int nameLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
+				length = (int)PDU.byteArrayToLong(bytes, 4, 6);
+
+				time = (int)PDU.byteArrayToLong(bytes, 8, 12);
+				String message = PDU.stringReader(bytes, 12,length);
+				
+				if(length % 4 != 0) {
+					length += 4 - ( length % 4);
+				}
+				
+				if(nameLength == 0){
+					messname = "Server";
+				} else {
+					 messname = PDU.stringReader
+							 		(bytes, 12+length,nameLength);
+				}
+				
+				SimpleDateFormat sdf = new 
+									SimpleDateFormat("MMM dd,yyyy HH:mm");    
+				Date resultdate = new Date(time);
+				
+				
+				
+				String mess = sdf.format(resultdate)+": "
+											+messname+" said: "+message;
+				getStringMessageFromClient(mess);
+				
+			break;
+			
+			case(QUIT):
+				client.closeClientsSocket();
+				
+			break;
+			
+			case(UJOIN):
+				
+				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
+				time = (int) PDU.byteArrayToLong(bytes, 4, 8);
+				
+				name = PDU.stringReader(bytes, 8, length);
+				
+				boolean don = true;
+				for(String temp : nickNames){
+					if(temp.equals(name)){
+						don = false;
+					}
+				}
+				if(don){
+					nickNames.add(name);
+					getNameFromClient(nickNames);
+				}
+				
+				
+				getStringFromClient(name+" joined chatroom at: " 
+															+time);
+				
+			break;
+			
+			case(ULEAVE):
+				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
+			
+				name = PDU.stringReader(bytes, 8, length);
+			
+				for(int i = 0; i < nickNames.size(); i++ ){
+					if(nickNames.get(i).equals(name)){
+						nickNames.remove(i);
+					}
+				}
+				getNameFromClient(nickNames);
+				getStringFromClient(name+" leaved the chatroom");
+			break;
+			
+			case(UCNICK):
+				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
+				int secondLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
+				time = (int)PDU.byteArrayToLong(bytes, 4, 8);
+				
+				name = PDU.stringReader(bytes, 8, length);
+				
+				if(length%4!=0){
+					length += 4 - (length % 4);
+				}
+				
+				String name2 = PDU.stringReader
+							(bytes, 8+length, secondLength);
+
+		
+			for(int i = 0; i < nickNames.size(); i++ ){
+				if(nickNames.get(i).equals(name)){
+					nickNames.set(i, name2);
+					getNameFromClient(nickNames);
+				}
+			}
+			String changeNick = "Time: "+String.valueOf(time)
+					+"Old nick: "+name+"New nick: "+name2;
+			
+			getStringFromClient(changeNick);
+			
+			
+			break;
+			
+			case(NICKS):
+				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
+				int index = 4;
+				boolean condition;
+				System.out.println("NICKS " +length);
+				for(int i = 0; i < length; i++){
+					condition = true;
+					name = "";
+					do{
+						byte[] tempbyte = Arrays.copyOfRange
+								(bytes, index, index+1);
+						
+						String character = PDU.bytaArrayToString
+								(tempbyte, 1);
+						
+						if(character.equals("\0")){
+							condition = false;
+						} else {
+							name += character;
+						}
+						
+						index++;
+					}while(condition);
+					
+					boolean dont = true;
+					
+					for(String temp : nickNames){
+						
+						if(name.equals(temp)){
+							dont = false;
+						}
+					}
+
+					if(dont){
+						nickNames.add(name);
+					}
+				}
+
+				getNameFromClient(nickNames);
+
+			break;
+			
+			default:
+			break;
+		}
+	}
 	
 	/**
 	 * Sets the field socket to the given socket

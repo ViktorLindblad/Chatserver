@@ -47,7 +47,6 @@ public class MESS extends PDU{
 					.append(messageBytes).pad().toByteArray();
 		} else {
 			length = name.getBytes(StandardCharsets.UTF_8).length;
-			System.out.println("MessageLength "+ lengthMessage);
 			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).padshort()
 					.append((byte)length)
 					.append((byte)checksum)
@@ -64,10 +63,8 @@ public class MESS extends PDU{
 				checksum = checkLength;
 			}
 						
-			System.out.println("checksum: "+checksum);
 			
 			bytes = null;
-			System.out.println("MessageLength "+ lengthMessage);
 
 			bytes = new ByteSequenceBuilder(OpCode.MESSAGE.value).padshort()
 					.append((byte)length)
