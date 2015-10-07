@@ -269,9 +269,9 @@ public class Server implements Runnable {
 
 			for(MessageHandler temp : SMH) {
 				if(!temp.getMessageQueue().isEmpty()) {
-
+					
 					buffer = temp.getMessageQueue().remove();
-										
+					System.out.println("message: "+buffer.length);					
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
 					if(ca!=12) {
 						messageName = connectedNames

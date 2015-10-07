@@ -15,6 +15,7 @@ import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Random;
 
 import PDU.GETLIST;
@@ -34,6 +35,7 @@ public class Client implements Runnable {
 	private MessageHandler messageHandler;
 	
 	//Lists
+	private LinkedList<byte[]> messageQueue;
 	//A list with all server names.
 	private ArrayList<String> serverNames;
 	//A list with all server ports.
@@ -70,6 +72,8 @@ public class Client implements Runnable {
 		buffer = new byte[256];
 		this.gui = gui;
 		servers = 0;		
+		
+		messageQueue = new LinkedList<byte[]>();
 		
 		if(!connect(ip)) {
 			System.out.println("Connection failed");
@@ -209,8 +213,169 @@ public class Client implements Runnable {
 	
 	private void receiveTCP() {
 
+		try {
+			int len;
+			byte[] tempbuffer = new byte[0];
+			buffer = new byte[65535];
+			len = inStream.read(buffer);
+			tempbuffer = new byte[len];
+			
+			for(int i = 0; i < len; i++ ) {
+				tempbuffer[i] = buffer[i];
+			}
+			
+			
+			int PDUlength = checkReceivedMessage(tempbuffer);
+			
+			while((PDUlength - tempbuffer.length) != 0) {
+				
+				if(PDUlength - tempbuffer.length < 0) {
+					
+					addNextMessage(tempbuffer,PDUlength);
+					tempbuffer = Arrays.copyOfRange(tempbuffer,
+									PDUlength, tempbuffer.length);
+					
+					PDUlength = checkReceivedMessage(tempbuffer);
+					
+				} else if(PDUlength - tempbuffer.length > 0) {
+					tempbuffer = waitForBytes(tempbuffer, PDUlength);
+					PDUlength = checkReceivedMessage(tempbuffer);
+				}
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+			
+	}
+	
+	private int calculatePads(int length) {
+		if(length % 4 == 0){
+			return 0;
+		} else {
+			return 4 - (length % 4 );
+		}
+	}
+	
+	private int checkReceivedMessage(byte[] bytes) {
+		int op = (int)PDU.byteArrayToLong(bytes, 0, 1);
+		
+		int nameLength;
+		int messLength;
+		int sequenceLength = 0;
+		int pads=0;
+		
+		switch(op){
+		
+		case(MESS):
+			
+			nameLength = (int)PDU.byteArrayToLong(bytes, 2, 3);
+			pads += calculatePads(nameLength);
+			messLength = (int)PDU.byteArrayToLong(bytes, 4, 6);
+			pads += calculatePads(messLength);
+			
+			sequenceLength = 12 + nameLength + messLength+pads;
+			
+			break;
+		case(QUIT):
+			
+			sequenceLength = 4;
+			
+			break;
+		case(UJOIN):
+			
+			nameLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
+			pads += calculatePads(nameLength);
+		
+			sequenceLength = 8 + nameLength + pads;
+						
+			break;
+		case(ULEAVE):
+			
+			nameLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
+			pads += calculatePads(nameLength);
+		
+			sequenceLength = 8 + nameLength + pads;
+			
+			break;
+		case(UCNICK):
+			
+			nameLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
+			pads += calculatePads(nameLength);
+
+			int second = (int)PDU.byteArrayToLong(bytes, 2, 3);
+			pads += calculatePads(second);
+
+			
+			sequenceLength = 8 + nameLength + second + pads;
+			
+			break;
+		case(NICKS):
+			
+			nameLength = (int)PDU.byteArrayToLong(bytes, 2, 4);
+			pads += calculatePads(nameLength);
+
+			
+			sequenceLength = 4 + nameLength + pads;
+		
+			break;
+		default:
+			
+			break;
+		}
+		return sequenceLength;
+
+	}
+	
+	private void addNextMessage(byte[] bytes, int PDUlength) {
+		messageQueue.add(Arrays.copyOfRange(bytes, 0, PDUlength));
 	}
 
+
+	private byte[] waitForBytes(byte[] bytes, int PDUlength) {
+		byte[] tempbuffer = new byte[0];
+		
+		
+		int len,lastByte;
+		int missingBytes = PDUlength - bytes.length;
+		byte[] returnBytes = new byte[missingBytes + bytes.length];
+		lastByte = bytes.length;
+		for(int j = 0; j < bytes.length; j++) {
+			returnBytes[j] = bytes[j];
+		}
+		
+		do {
+			try {
+				buffer = new byte[65535];
+				len = inStream.read(buffer,0,PDUlength-lastByte);
+				tempbuffer = new byte[len];
+				
+				for(int i = 0; i < len; i++ ) {
+					tempbuffer[i] = buffer[i];
+				}
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			if(tempbuffer.length < missingBytes) {
+				
+				for(int i = 0; i < tempbuffer.length; i++) {
+					returnBytes[lastByte+i] = tempbuffer[i];
+				}
+				lastByte += tempbuffer.length;
+				missingBytes -= tempbuffer.length;
+			} else {
+				for(int i = 0; i < missingBytes; i++) {
+					returnBytes[lastByte+i] = tempbuffer[i];
+				}
+				lastByte += missingBytes;
+			}
+		} while(lastByte < PDUlength);
+			messageQueue.add(returnBytes);
+			
+			return Arrays.copyOfRange(tempbuffer, missingBytes, tempbuffer.length);
+			
+	}
 
 	/**
 	 * Sends a message over TCP.
@@ -244,7 +409,7 @@ public class Client implements Runnable {
 			socket = new Socket("localhost",tcpPort);
 			outStream = socket.getOutputStream();
 			
-			messageHandler = new MessageHandler(socket);
+			inStream = socket.getInputStream();
 
 			gui.setConnected(true);
 			

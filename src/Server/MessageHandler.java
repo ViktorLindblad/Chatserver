@@ -12,9 +12,9 @@ import PDU.PDU;
 
 public class MessageHandler implements Runnable {
 	
-	private static final int MESS = 10, QUIT = 11,  JOIN = 12, 
-				CHNICK = 13,UJOIN = 16,ULEAVE = 17, UCNICK = 18,
-				NICKS = 19;
+	private static final int MESS = 10, QUIT = 11, JOIN = 12,
+							CHNICK = 13;
+
 	
 	private LinkedList <byte[]> messageQueue; 
 	private Socket socket;
@@ -73,21 +73,21 @@ public class MessageHandler implements Runnable {
 				}
 				
 				
-				int bytesread = checkReceivedMessage(tempbuffer);
+				int PDUlength = checkReceivedMessage(tempbuffer);
 				
-				while((bytesread - tempbuffer.length) != 0) {
+				while((PDUlength - tempbuffer.length) != 0) {
 					
-					if(bytesread - tempbuffer.length < 0) {
+					if(PDUlength - tempbuffer.length < 0) {
 						
-						addNextMessage(tempbuffer,bytesread);
+						addNextMessage(tempbuffer,PDUlength);
 						tempbuffer = Arrays.copyOfRange(tempbuffer,
-										bytesread, tempbuffer.length);
+										PDUlength, tempbuffer.length);
 						
-						bytesread = checkReceivedMessage(tempbuffer);
+						PDUlength = checkReceivedMessage(tempbuffer);
 						
-					} else if(bytesread - tempbuffer.length > 0) {
-						tempbuffer = waitForBytes(tempbuffer, bytesread);
-						bytesread = checkReceivedMessage(tempbuffer);
+					} else if(PDUlength - tempbuffer.length > 0) {
+						tempbuffer = waitForBytes(tempbuffer, PDUlength);
+						PDUlength = checkReceivedMessage(tempbuffer);
 					}
 				}
 				
@@ -230,42 +230,21 @@ public class MessageHandler implements Runnable {
 			sequenceLength = 4;
 			
 			break;
-		case(UJOIN):
+		case(JOIN):
 			
 			nameLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
 			pads += calculatePads(nameLength);
 		
-			sequenceLength = 8 + nameLength + pads;
+			sequenceLength = 4 + nameLength + pads;
 						
 			break;
-		case(ULEAVE):
+		case(CHNICK):
 			
 			nameLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
 			pads += calculatePads(nameLength);
 		
-			sequenceLength = 8 + nameLength + pads;
-			
-			break;
-		case(UCNICK):
-			
-			nameLength = (int)PDU.byteArrayToLong(bytes, 1, 2);
-			pads += calculatePads(nameLength);
-
-			int second = (int)PDU.byteArrayToLong(bytes, 2, 3);
-			pads += calculatePads(second);
-
-			
-			sequenceLength = 8 + nameLength + second + pads;
-			
-			break;
-		case(NICKS):
-			
-			nameLength = (int)PDU.byteArrayToLong(bytes, 2, 4);
-			pads += calculatePads(nameLength);
-
-			
 			sequenceLength = 4 + nameLength + pads;
-		
+			
 			break;
 		default:
 			
