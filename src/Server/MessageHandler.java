@@ -77,9 +77,7 @@ public class MessageHandler implements Runnable {
 					}
 					
 					int PDUlength = checkReceivedMessage(tempbuffer);
-					System.out.println("PDUlength: "+ PDUlength);
-					System.out.println("bytes: "+tempbuffer.length);
-					System.out.println("case: "+(int)PDU.byteArrayToLong(tempbuffer, 0, 1));
+					
 					while((PDUlength - tempbuffer.length) != 0) {
 						
 						if(PDUlength - tempbuffer.length < 0) {

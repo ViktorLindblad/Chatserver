@@ -377,7 +377,6 @@ public class Client implements Runnable {
 			}
 		} while(lastByte < PDUlength);
 			messageQueue.add(returnBytes);
-			
 			return Arrays.copyOfRange(tempbuffer, missingBytes, tempbuffer.length);
 			
 	}

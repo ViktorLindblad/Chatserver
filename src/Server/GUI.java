@@ -66,7 +66,9 @@ public class GUI implements ActionListener, Runnable{
 	
 	private JFrame frame;
 	
-	private int port;
+	private int port,TCPport;
+	
+	private String address;
 	
 	private JTextArea chatbox;
 	private JTextField message;
@@ -224,8 +226,8 @@ public class GUI implements ActionListener, Runnable{
 			
 			if(clientconnect) {
 				Random random = new Random();
-				port += random.nextInt(1000);
-				client = new  Client("itchy.cs.umu.se",this,port,1337);
+				TCPport += random.nextInt(1000);
+				client = new  Client(address,this,TCPport,port);
 				clientThread = new Thread(client);
 				clientThread.start();
 				clientconnect = false;
@@ -397,7 +399,7 @@ public class GUI implements ActionListener, Runnable{
 
 	public void run() {
 		chatbox.setText("Chose port to connect to and press sendmessage \n");
-		/*
+		
 		boolean condition = true;
 		do{
 			if(!getQueue().isEmpty()){
@@ -413,8 +415,9 @@ public class GUI implements ActionListener, Runnable{
 				condition = true;
 			}
 		}while(!condition);
+		
 		chatbox.setText("Connect to the nameserver by press connect");
-		*/
+		
 		while(running){
 			String message = "";
 			

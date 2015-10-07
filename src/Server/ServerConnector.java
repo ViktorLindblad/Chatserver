@@ -24,10 +24,12 @@ public class ServerConnector implements Runnable {
 	 */
 	public ServerConnector(ServerSocket serverSocket,Server server) {
 		queue = new LinkedList<Socket>();
+		
 		this.serverSocket = serverSocket;
-		running = true;
 		this.server = server;
-
+		
+		running = true;
+	
 	}
 	
 	/**
