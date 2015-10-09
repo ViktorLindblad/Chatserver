@@ -36,11 +36,7 @@ public final class ByteSequenceBuilder {
         }
         return this;
     }
-    
-    public ByteSequenceBuilder appendInteger(int i) {
-    	bytes.add((byte) (i & 0xff));
-    	return this;
-    }
+
 
     /**
      * @param s The short appended as two bytes at the end of the sequence.

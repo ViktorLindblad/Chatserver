@@ -257,7 +257,7 @@ public class Server implements Runnable {
 
 		while(getRunning()) {
 			
-			while(!connector.getSocketQueue().isEmpty()) {
+			if(!connector.getSocketQueue().isEmpty()) {
 				
 				Socket socket = connector
 								.getSocketQueue().remove();
@@ -269,17 +269,19 @@ public class Server implements Runnable {
 
 			for(MessageHandler temp : SMH) {
 				if(!temp.getMessageQueue().isEmpty()) {
+					System.out.println("message");
 					
 					buffer = temp.getMessageQueue().remove();
-					System.out.println("message from queue: "+buffer.length);					
+
 					int ca = (int)PDU.byteArrayToLong(buffer,0,1);
 					if(ca!=12) {
 						messageName = connectedNames
 											.get(temp.getSocket());
+						if(messageName == null ) {
+							messageName = "Corrupt";
+						}
 					}
-					if(messageName == null ) {
-						messageName = "Corrupt";
-					}
+				
 					QUIT quit = new QUIT();
 					switch(ca) {
 						case(MESS):
@@ -291,7 +293,6 @@ public class Server implements Runnable {
 							String message = PDU
 									.stringReader
 									(buffer, 12,messageLength);
-							System.out.println(message);
 						
 							MESS mess = new MESS
 									(message, messageName, false);
@@ -370,7 +371,6 @@ public class Server implements Runnable {
 								ULEAVE dleave = new ULEAVE(messageName);
 								
 								connectedNames.remove(temp.getSocket());
-								removeQueue.add(temp);
 								
 								sendTCPToAll(dleave.toByteArray());
 							}
@@ -380,16 +380,6 @@ public class Server implements Runnable {
 			}
 			while(!removeQueue.isEmpty()) {
 				SMH.remove(removeQueue.removeFirst());
-			}
-			
-			while(!removeSocketQueue.isEmpty()) {
-				Socket remove = removeSocketQueue.removeFirst();
-				
-				ULEAVE uleave = new ULEAVE(connectedNames.get(remove));
-				
-				connectedNames.remove(remove);
-				
-				sendTCPToAll(uleave.toByteArray());
 			}
 		}
 	}
@@ -456,7 +446,6 @@ public class Server implements Runnable {
 			
 			if(connectedNames.get(temp.getSocket())!=null) {
 				OutputStream output;
-			System.out.println("sending to: "+connectedNames.get(temp.getSocket()));
 				try {
 					output = temp.getSocket().getOutputStream();
 					output.write(message);

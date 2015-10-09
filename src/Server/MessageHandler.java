@@ -66,7 +66,7 @@ public class MessageHandler implements Runnable {
 				byte[] tempbuffer = new byte[0];
 				buffer = new byte[65535];
 				len = inStream.read(buffer);
-				
+
 				if(len < 0 ) {
 
 				} else {
@@ -93,15 +93,17 @@ public class MessageHandler implements Runnable {
 							PDUlength = checkReceivedMessage(tempbuffer);
 						}
 					}
+					if(PDU.byteArrayToLong(buffer, 0, 1)==11) {
+						running = false;
+					}	
+					messageQueue.add(buffer);
 				}
 				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			if(PDU.byteArrayToLong(buffer, 0, 1)==11) {
-				running = false;
-			}			
-			messageQueue.add(buffer);
+		
+			
 		}
 	}
 	
@@ -112,6 +114,7 @@ public class MessageHandler implements Runnable {
 		int len,lastByte;
 		int missingBytes = PDUlength - bytes.length;
 		byte[] returnBytes = new byte[missingBytes + bytes.length];
+		
 		lastByte = bytes.length;
 		for(int j = 0; j < bytes.length; j++) {
 			returnBytes[j] = bytes[j];
@@ -121,12 +124,17 @@ public class MessageHandler implements Runnable {
 			try {
 				buffer = new byte[65535];
 				len = inStream.read(buffer,0,PDUlength-lastByte);
-				tempbuffer = new byte[len];
+				if(len > 0){
+					return tempbuffer;
+				} else {
+					
 				
-				for(int i = 0; i < len; i++ ) {
-					tempbuffer[i] = buffer[i];
+					tempbuffer = new byte[len];
+					
+					for(int i = 0; i < len; i++ ) {
+						tempbuffer[i] = buffer[i];
+					}
 				}
-				System.out.println("message: " +tempbuffer.length);
 				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -226,7 +234,6 @@ public class MessageHandler implements Runnable {
 			pads += calculatePads(nameLength);
 		
 			sequenceLength = 4 + nameLength + pads;
-						System.out.println("join: "+ sequenceLength);
 			break;
 		case(CHNICK):
 			

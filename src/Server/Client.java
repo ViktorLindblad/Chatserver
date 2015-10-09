@@ -65,7 +65,7 @@ public class Client implements Runnable {
 
 		this.UDPport = UDPport;
 		this.port = port;
-		buffer = new byte[256];
+		buffer = new byte[65535];
 		this.gui = gui;
 		servers = 0;		
 		
@@ -537,7 +537,6 @@ public class Client implements Runnable {
 		while(running) {
 		
 			if(gui.getUpdate()) {
-				System.out.println("Get update");
 				getlist();
 				infoToClient();
 				gui.setUpdate(false);
@@ -563,7 +562,6 @@ public class Client implements Runnable {
 			}
 			while(gui.getConnected()) {
 				receiveTCP();
-
 			}
 		}
 	}
