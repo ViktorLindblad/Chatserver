@@ -493,7 +493,6 @@ public class GUI implements ActionListener, Runnable{
 			break;
 			
 			case(QUIT):
-				System.out.println("CLOSE");
 				client.closeClientsSocket();
 				
 			break;
@@ -569,7 +568,7 @@ public class GUI implements ActionListener, Runnable{
 				length = (int)PDU.byteArrayToLong(bytes, 1, 2);
 				int index = 4;
 				boolean condition;
-				System.out.println("NICKS " +length);
+
 				for(int i = 0; i < length; i++){
 					condition = true;
 					name = "";

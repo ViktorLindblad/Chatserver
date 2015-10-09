@@ -11,8 +11,7 @@ public class MESS extends PDU{
 		
 		long time = System.currentTimeMillis();
 		time = time /1000;
-		System.out.println("timeStamp: "+time);
-		System.out.println("actuall time: "+ System.currentTimeMillis());
+
 		int checksum = 0;
 		int checkLength;
 		int length = 0;

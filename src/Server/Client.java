@@ -11,8 +11,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -105,7 +103,6 @@ public class Client implements Runnable {
 			
 			sequenceNumber = (int)PDU.byteArrayToLong(message,1,2);
 			servers = (int)PDU.byteArrayToLong(message,2,4);
-			System.out.println(servers);
 			int byteIndex = 4;
 			int tempint;
 			byte[] tempbytes;
@@ -222,10 +219,9 @@ public class Client implements Runnable {
 				for(int i = 0; i < len; i++ ) {
 					tempbuffer[i] = buffer[i];
 				}
-				System.out.println("tempbuffer: "+tempbuffer.length);
 				
 				int PDUlength = checkReceivedMessage(tempbuffer);
-				System.out.println(PDUlength);
+
 				if(PDUlength == tempbuffer.length) {
 					messageQueue.add(tempbuffer);
 				}
@@ -410,7 +406,7 @@ public class Client implements Runnable {
 	private boolean connectToTCP(int tcpPort,Inet4Address ip) {
 
 		try{
-			socket = new Socket(ip.getCanonicalHostName(),tcpPort);
+			socket = new Socket("localhost",tcpPort);
 			outStream = socket.getOutputStream();
 			
 			inStream = socket.getInputStream();
@@ -574,7 +570,7 @@ public class Client implements Runnable {
 	 */
 	
 	public synchronized void closeClientsSocket() {
-		System.out.println("Closing");
+
 		multicastSocket.close();
 		try {
 			outStream.close();

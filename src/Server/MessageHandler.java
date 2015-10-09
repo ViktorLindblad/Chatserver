@@ -101,6 +101,7 @@ public class MessageHandler implements Runnable {
 				
 			} catch (IOException e) {
 				e.printStackTrace();
+				running = false;
 			}
 		
 			

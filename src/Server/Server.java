@@ -88,7 +88,7 @@ public class Server implements Runnable {
 		if(!connect(ip)) {
 			System.out.println("Connection failed");
 		} else {
-			System.out.println(address);
+
 			datagramSocket.connect(address, this.port);
 		}
 		
@@ -149,7 +149,6 @@ public class Server implements Runnable {
 		try {
 			datagramSocket.send(packet);
 			datagramSocket.setSoTimeout(5000);
-			System.out.println("message sent");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -194,12 +193,10 @@ public class Server implements Runnable {
 		byte [] message = receive();
 		
 		if(PDU.byteArrayToLong(message,0,1) == 100) {
-			System.out.println("not regged");
 			send(reg.toByteArray());
 			message = receive();
 			
 		}
-		System.out.println("regged");
 				
 		return (int)PDU.byteArrayToLong(message, 2,4);//ID number
 		
@@ -269,7 +266,6 @@ public class Server implements Runnable {
 
 			for(MessageHandler temp : SMH) {
 				if(!temp.getMessageQueue().isEmpty()) {
-					System.out.println("message");
 					
 					buffer = temp.getMessageQueue().remove();
 
